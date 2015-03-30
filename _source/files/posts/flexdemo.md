@@ -121,9 +121,9 @@ The [`Child` component](https://github.com/krawaller/flexboxdemo/blob/gh-pages/s
 ```javascript
 var Child = React.createClass({
   propTypes: {
-    def: React.PropTypes.object.isRequired,
-    selected: React.PropTypes.bool,
-    callback: React.PropTypes.func.isRequired
+    def: ptypes.objectOf(ptypes.oneOfType([ptypes.string,ptypes.number])).isRequired,
+    selected: ptypes.bool,
+    callback: ptypes.func.isRequired
   },
   render: function(){
     var p = this.props;
@@ -147,8 +147,8 @@ The [`Form` component](https://github.com/krawaller/flexboxdemo/blob/gh-pages/sr
 ```javascript
 var Form = React.createClass({
   propTypes: {
-    options: ptypes.object.isRequired,
-    values: ptypes.object.isRequired,
+    options: ptypes.objectOf(ptypes.arrayOf(ptypes.oneOfType([ptypes.string,ptypes.number]))).isRequired,
+    values: ptypes.objectOf(ptypes.oneOfType([ptypes.string,ptypes.number])).isRequired,
     title: ptypes.string.isRequired,
     callback: ptypes.func.isRequired
   },

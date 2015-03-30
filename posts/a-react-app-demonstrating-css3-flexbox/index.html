@@ -171,9 +171,9 @@ Presenting and dissecting a React-built CSS flexbox demonstration app
 <p>The <a href="https://github.com/krawaller/flexboxdemo/blob/gh-pages/src/child.js"><code>Child</code> component</a> is rather simple - it receives an object of styles which it should apply, and also write out.</p>
 <pre><code>var Child = React.createClass({
   propTypes: {
-    def: React.PropTypes.object.isRequired,
-    selected: React.PropTypes.bool,
-    callback: React.PropTypes.func.isRequired
+    def: ptypes.objectOf(ptypes.oneOfType([ptypes.string,ptypes.number])).isRequired,
+    selected: ptypes.bool,
+    callback: ptypes.func.isRequired
   },
   render: function(){
     var p = this.props;
@@ -192,8 +192,8 @@ Presenting and dissecting a React-built CSS flexbox demonstration app
 <p>The <a href="https://github.com/krawaller/flexboxdemo/blob/gh-pages/src/form.js"><code>Form</code> component</a> take an <code>options</code> object, a <code>values</code> object containing the currently selected options, a <code>title</code> and a <code>callback</code>. It will then use a <code>Dropdown</code> component for each property in <code>options</code>/<code>values</code>.</p>
 <pre><code><span class="keyword">var</span> Form = React.createClass({
   propTypes: {
-    options: ptypes.object.isRequired,
-    values: ptypes.object.isRequired,
+    options: ptypes.objectOf(ptypes.arrayOf(ptypes.oneOfType([ptypes.string,ptypes.number]))).isRequired,
+    values: ptypes.objectOf(ptypes.oneOfType([ptypes.string,ptypes.number])).isRequired,
     title: ptypes.string.isRequired,
     callback: ptypes.func.isRequired
   },
