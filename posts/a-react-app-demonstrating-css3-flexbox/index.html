@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A React app demonstrating CSS3 flexbox</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Presenting and dissecting a React-built CSS flexbox demonstration app
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/a-react-app-demonstrating-css3-flexbox">A React app demonstrating CSS3 flexbox</a>
+    <span class="post-meta">
+      <time datetime="Sun Mar 29 2015 01:00:00 GMT+0100 (CET)">Mar 29th 2015</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/css3/'>css3</a></span>
+      
+        <span><a href='../../tags/flexbox/'>flexbox</a></span>
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+        <span><a href='../../tags/case study/'>case study</a></span>
+      
+        <span><a href='../../tags/underscore/'>underscore</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="exploring-flexbox">Exploring Flexbox</h3>
+<p>Like everyone else I&#39;ve been playing around with the newly released <a href="http://facebook.github.io/react-native/">React Native</a>. Buckets of fun! But I was quickly made aware that I still haven&#39;t really understood <a href="https://css-tricks.com/snippets/css/a-guide-to-flexbox/">flexbox</a>, which React Native uses for layout.</p>
+<p>In order to alleviate that I built an interactive demo app where you can change the related props for the container and the children, and see first hand what the resulting layout looks like. This helped me a lot, so I share it here hoping it can help you too! You can try it out below, and it is also published <a href="">here</a>.</p>
+<iframe src="http://blog.krawaller.se/flexboxdemo/" style="height:440px;width:100%"></iframe>
+
+<p>Putting the demo app together was a lot of fun! I used React (of course), and it turned out to be a great fit for this particular project. Throughout the rest of this post I&#39;ll walk through the <a href="">source code</a>.</p>
+<h3 id="components">Components</h3>
+<p>The app is made up by four components:</p>
+<p><img src="../../img/flexboxcomp.jpg" alt="components"></p>
+<p>The top level <code>Demo</code> component uses <code>Child</code> to display the flex children. It also renders the two <code>Form</code>s, who in turn uses <code>Dropdown</code> for each individual control.</p>
+<h3 id="demo">Demo</h3>
+<p>Let&#39;s first look at the <code>Demo</code> component. The file (<a href="https://github.com/krawaller/flexboxdemo/blob/gh-pages/src/demo.js">demo.js</a>) contains the regular class definition as well as the flex data blueprint:</p>
+<pre><code><span class="keyword">var</span> parentoptions = {
+  flexDirection: [<span class="string">"row"</span>,<span class="string">"row-reverse"</span>,<span class="string">"column"</span>,<span class="string">"column-reverse"</span>],
+  justifyContent: [<span class="string">"flex-start"</span>,<span class="string">"flex-end"</span>,<span class="string">"center"</span>,<span class="string">"space-between"</span>,<span class="string">"space-around"</span>],
+  alignItems: [<span class="string">"flex-start"</span>,<span class="string">"flex-end"</span>,<span class="string">"center"</span>,<span class="string">"stretch"</span>,<span class="string">"baseline"</span>],
+  flexWrap: [<span class="string">"nowrap"</span>,<span class="string">"wrap"</span>,<span class="string">"wrap-reverse"</span>],
+  alignContent: [<span class="string">"flex-start"</span>,<span class="string">"flex-end"</span>,<span class="string">"center"</span>,<span class="string">"stretch"</span>,<span class="string">"space-between"</span>,<span class="string">"space-around"</span>]
+};
+
+<span class="keyword">var</span> childoptions = {
+  alignSelf: [<span class="string">"auto"</span>,<span class="string">"flex-start"</span>,<span class="string">"flex-end"</span>,<span class="string">"center"</span>,<span class="string">"baseline"</span>,<span class="string">"stretch"</span>],
+  flexGrow: _.range(<span class="number">0</span>,<span class="number">6</span>),
+  order: _.range(-<span class="number">10</span>,<span class="number">11</span>)
+};
+
+<span class="keyword">var</span> Demo = React.createClass({
+  getInitialState: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>...},
+  setValue: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>...},
+  render: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>...}
+});</code></pre>
+
+<p>These are used to build the initial state of the component:</p>
+<pre><code>getInitialState: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+  <span class="keyword">return</span> {
+    parent: _.mapValues(parentoptions,_.first),
+    children: _.range(<span class="number">1</span>,<span class="number">5</span>).map(<span class="function"><span class="keyword">function</span><span class="params">(n)</span>{</span>
+      <span class="keyword">return</span> _.extend(_.mapValues(childoptions,_.first),{ ID: n, order: <span class="number">0</span>, flexGrow: <span class="number">0</span> });
+    }),
+    selectedId: <span class="number">0</span>
+  };
+}</code></pre>
+
+<p>As you can see we have three state variables:</p>
+<ul>
+<li><code>parent</code> contains the currently selected container options. To begin with we select the first option from each array of property values.</li>
+<li><code>children</code> contains an array with an option object for each child. Again we use the first option as default except for <code>flexGrow</code> and <code>order</code>. Each child is also given a unique id.</li>
+<li><code>selectedId</code> contains the position of the currently selected child.</li>
+</ul>
+<p>The app implements a bare-bones cursor, similar to <a href="https://github.com/dustingetz/react-cursor">React cursor</a> or <a href="https://github.com/mquan/cortex">Cortex</a>. The child components will get callbacks that when called update <code>Demo</code>&#39;s state. This is implemented through the <code>setValues</code> method:</p>
+<pre><code>setValue: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+  <span class="keyword">var</span> arr = <span class="built_in">Array</span>.prototype.slice.call(<span class="built_in">arguments</span>),
+      val = arr.pop(),
+      prop = arr.pop(),
+      clone = _.cloneDeep(<span class="keyword">this</span>.state),
+      pointer = clone;
+  <span class="keyword">while</span>(arr.length) pointer = pointer[arr.shift()];
+  pointer[prop] = _.isFinite(<span class="built_in">parseInt</span>(val)) ? <span class="built_in">parseInt</span>(val) : val;
+  <span class="keyword">this</span>.setState(clone);
+}</code></pre>
+
+<p>If we did <code>setValue(&quot;children&quot;,0,&quot;alignSelf&quot;,&quot;stretch&quot;)</code>, then that would equal <code>this.state[&quot;children&quot;][0][&quot;alignSelf&quot;] = &quot;stretch&quot;</code>.</p>
+<p>Inside the <code>render</code> method of <code>Demo</code> we pass callbacks to the child components tied to <code>setValue</code>, with the arguments partly prefilled.</p>
+<pre><code>render: function(){
+    var s = this.state, child = s.selectedId, cbmaker = Function.prototype.bind.bind(this.setValue,this);
+    return (
+      &lt;div className="wrapper" key={Date()}&gt;
+        &lt;div className="explanation"&gt;...&lt;/div&gt;
+        &lt;div className="forms"&gt;
+          &lt;Form title="container" options={parentoptions} values={s.parent} callback={cbmaker("parent")} /&gt;
+          &lt;Form title={"child #"+(child+1)} options={childoptions} values={s.children[child]} callback={cbmaker("children",child)} /&gt;
+        &lt;/div&gt;
+        &lt;div className="container" style={s.parent}&gt;
+          {s.children.map(function(c,n){
+            return &lt;Child key={c.ID} def={c} selected={n===child} callback={cbmaker("selectedId",n)} /&gt;;
+          },this)}
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }</code></pre>
+
+<p>Yes, I did feel rather smug when using <code>bind</code> on <code>bind</code> to define <code>cbmaker</code>. :)</p>
+<h3 id="child">Child</h3>
+<p>The <a href="https://github.com/krawaller/flexboxdemo/blob/gh-pages/src/child.js"><code>Child</code> component</a> is rather simple - it receives an object of styles which it should apply, and also write out.</p>
+<pre><code>var Child = React.createClass({
+  propTypes: {
+    def: React.PropTypes.object.isRequired,
+    selected: React.PropTypes.bool,
+    callback: React.PropTypes.func.isRequired
+  },
+  render: function(){
+    var p = this.props;
+    return (
+      &lt;div onClick={_.ary(p.callback,0)} style={p.def} className={"child"+(p.selected ? " selectedchild":"")}&gt;
+        {_.map(p.def,function(val,key){
+          return &lt;div key={key}&gt;{key}: {val}&lt;/div&gt;;
+        },this)}
+      &lt;/div&gt;
+    );
+  }
+});</code></pre>
+
+<p>Notice how we must do <code>_.ary(p.callback,0)</code> to prevent the click event from being passed along, messing up the <code>setValue</code> call in <code>Demo</code>.</p>
+<h3 id="form">Form</h3>
+<p>The <a href="https://github.com/krawaller/flexboxdemo/blob/gh-pages/src/form.js"><code>Form</code> component</a> take an <code>options</code> object, a <code>values</code> object containing the currently selected options, a <code>title</code> and a <code>callback</code>. It will then use a <code>Dropdown</code> component for each property in <code>options</code>/<code>values</code>.</p>
+<pre><code><span class="keyword">var</span> Form = React.createClass({
+  propTypes: {
+    options: React.PropTypes.object.isRequired,
+    values: React.PropTypes.object.isRequired,
+    title: React.PropTypes.string.isRequired,
+    callback: React.PropTypes.func.isRequired
+  },
+  render: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="keyword">var</span> p = <span class="keyword">this</span>.props;
+    <span class="keyword">return</span> (
+      <span class="xml"><span class="tag">&lt;<span class="title">div</span> <span class="attribute">className</span>=<span class="value">'form'</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">strong</span> <span class="attribute">key</span>=<span class="value">'title'</span>&gt;</span>{p.title}<span class="tag">&lt;/<span class="title">strong</span>&gt;</span>
+        {_.mapValues(p.options,function(opts,name){
+          return (
+            <span class="tag">&lt;<span class="title">div</span> <span class="attribute">key</span>=<span class="value">{name}</span> <span class="attribute">className</span>=<span class="value">'formrow'</span>&gt;</span>
+              <span class="tag">&lt;<span class="title">span</span>&gt;</span>{name}: <span class="tag">&lt;/<span class="title">span</span>&gt;</span>
+              <span class="tag">&lt;<span class="title">Dropdown</span> <span class="attribute">options</span>=<span class="value">{opts}</span> <span class="attribute">current</span>=<span class="value">{p.values[name]}</span> <span class="attribute">callback</span>=<span class="value">{p.callback.bind(this,name)}</span> /&gt;</span>
+            <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+          );
+        },this)}
+      <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    );
+  }
+});</span></code></pre>
+
+<p>Note how it passes <code>callback</code> along to each <code>Dropdown</code> but curries it further with the property name.</p>
+<h3 id="dropdown">Dropdown</h3>
+<p>Finally, the <code>Dropdown</code> component renders a <code>select</code> control with the given values.</p>
+<pre><code>var Dropdown = React.createClass({
+  propTypes: {
+    options: React.PropTypes.object.isRequired,
+    current: React.PropTypes.string.isRequired,
+    callback: React.PropTypes.func.isRequired
+  },
+  changeOption: function(e){
+    this.props.callback(this.refs.sel.getDOMNode().value);
+  },
+  render: function(){
+    return (
+      &lt;select ref="sel" onChange={this.changeOption} defaultValue={''+this.props.current} &gt;
+        {this.props.options.map(function(o){
+          return &lt;option key={o} value={o}&gt;{o}&lt;/option&gt;;
+        })}
+      &lt;/select&gt;
+    );
+  }
+});</code></pre>
+
+<p>Calling <code>callback</code> with the updated value will result in a curried call to <code>setValue</code>. </p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>Since the demo app by its very nature needed to cascade data changes, it turned out to be a great fit for React. Then again, most apps are!</p>
+<p>And although flexbox can seem intimidating at first, the model at its heart is really rather simple! Yet hugely powerful, and I think it was a stroke of genious to give it the task of layout in React Native. I&#39;ve done my fare share of Titanium development, but feel that using flexbox seems superior in every way.</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>

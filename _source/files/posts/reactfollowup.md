@@ -1,7 +1,7 @@
 ---
 title: A React.js case study follow-up
 author: David
-tags: [react,underscore]
+tags: [react,underscore,case study]
 date: 2014-09-05
 excerpt: This post details a refactoring of the previous React case study. We also touch on some Underscore usage.
 type: post

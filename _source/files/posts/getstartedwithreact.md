@@ -1,7 +1,7 @@
 ---
 title: A React.js case study
 author: David
-tags: [react]
+tags: [react,case study]
 date: 2014-08-28
 excerpt: This post dissects a memory game built with React, focusing on structure and the React way of thinking
 type: post
