@@ -192,10 +192,10 @@ Presenting and dissecting a React-built CSS flexbox demonstration app
 <p>The <a href="https://github.com/krawaller/flexboxdemo/blob/gh-pages/src/form.js"><code>Form</code> component</a> take an <code>options</code> object, a <code>values</code> object containing the currently selected options, a <code>title</code> and a <code>callback</code>. It will then use a <code>Dropdown</code> component for each property in <code>options</code>/<code>values</code>.</p>
 <pre><code><span class="keyword">var</span> Form = React.createClass({
   propTypes: {
-    options: React.PropTypes.object.isRequired,
-    values: React.PropTypes.object.isRequired,
-    title: React.PropTypes.string.isRequired,
-    callback: React.PropTypes.func.isRequired
+    options: ptypes.object.isRequired,
+    values: ptypes.object.isRequired,
+    title: ptypes.string.isRequired,
+    callback: ptypes.func.isRequired
   },
   render: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
     <span class="keyword">var</span> p = <span class="keyword">this</span>.props;
@@ -220,9 +220,9 @@ Presenting and dissecting a React-built CSS flexbox demonstration app
 <p>Finally, the <code>Dropdown</code> component renders a <code>select</code> control with the given values.</p>
 <pre><code>var Dropdown = React.createClass({
   propTypes: {
-    options: React.PropTypes.object.isRequired,
-    current: React.PropTypes.string.isRequired,
-    callback: React.PropTypes.func.isRequired
+    options: ptypes.arrayOf(ptypes.oneOfType([ptypes.string,ptypes.number])).isRequired,
+    current: ptypes.oneOfType([ptypes.string,ptypes.number]).isRequired,
+    callback: ptypes.func.isRequired
   },
   changeOption: function(e){
     this.props.callback(this.refs.sel.getDOMNode().value);

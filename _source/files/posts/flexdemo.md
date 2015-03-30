@@ -147,10 +147,10 @@ The [`Form` component](https://github.com/krawaller/flexboxdemo/blob/gh-pages/sr
 ```javascript
 var Form = React.createClass({
   propTypes: {
-    options: React.PropTypes.object.isRequired,
-    values: React.PropTypes.object.isRequired,
-    title: React.PropTypes.string.isRequired,
-    callback: React.PropTypes.func.isRequired
+    options: ptypes.object.isRequired,
+    values: ptypes.object.isRequired,
+    title: ptypes.string.isRequired,
+    callback: ptypes.func.isRequired
   },
   render: function(){
     var p = this.props;
@@ -181,9 +181,9 @@ Finally, the `Dropdown` component renders a `select` control with the given valu
 
 var Dropdown = React.createClass({
   propTypes: {
-    options: React.PropTypes.object.isRequired,
-    current: React.PropTypes.string.isRequired,
-    callback: React.PropTypes.func.isRequired
+    options: ptypes.arrayOf(ptypes.oneOfType([ptypes.string,ptypes.number])).isRequired,
+    current: ptypes.oneOfType([ptypes.string,ptypes.number]).isRequired,
+    callback: ptypes.func.isRequired
   },
   changeOption: function(e){
     this.props.callback(this.refs.sel.getDOMNode().value);
