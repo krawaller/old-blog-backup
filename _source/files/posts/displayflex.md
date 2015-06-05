@@ -1,5 +1,5 @@
 ---
-title: Exploring a CSS3 flexbox tournament bracket
+title: Exploring a CSS3 tournament bracket
 author: David
 tags: [css3, flexbox]
 date: 2014-11-01
