@@ -1,7 +1,7 @@
 ---
 title: Algebra Explorer - a symbolic calculator web app
 author: David
-tags: [algebra explorer,testing]
+tags: [algebra explorer,testing,education]
 date: 2014-12-30
 excerpt: Introducing a symbolic calculator built on the web stack and peeping under the hood
 type: post
