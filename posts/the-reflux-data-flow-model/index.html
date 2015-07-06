@@ -229,7 +229,7 @@ mysubscriber<span class="preprocessor">.listenTo</span>(mypublisher,callback)<sp
 </ul>
 <h3 id="a-comparison-with-flux">A comparison with Flux</h3>
 <p>On a higher level, the structure employed by Flux and Reflux are very similar. Flux too employs a global event bus approach, with event-specific channels. However, instead of making all actions into event dispatchers like Reflux, Flux employs a single &quot;app dispatcher&quot; much like Backbone, although with mechanisms in play to enforce the event-specific channel approach.</p>
-<p>The fact that Flux has a central Dispatcher makes for lots of cruft in the code, as our <a href="react-js-architecture-flux-vs-reflux/">previous code comparison</a> between the two clearly demonstrated.</p>
+<p>The fact that Flux has a central Dispatcher makes for lots of cruft in the code, as our <a href="http://blog.krawaller.se/posts/react-js-architecture-flux-vs-reflux/">previous code comparison</a> between the two clearly demonstrated.</p>
 <p>If you need more convincing, compare the <a href="https://github.com/spoike/refluxjs-todo/">Reflux TodoMVC implementation</a> with the <a href="https://github.com/facebook/flux/tree/master/examples/flux-todomvc/">Flux version</a>.</p>
 <h3 id="using-reflux-in-react">Using Reflux in React</h3>
 <p>Enough Backbone babbling, what about best practices for using Reflux in React? We touched on it in the previous post, but wanted to revisit that here in the context of event flow. Here therefore is a stone tablet of divine law:</p>
