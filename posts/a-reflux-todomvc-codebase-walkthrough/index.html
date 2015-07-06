@@ -91,7 +91,7 @@ A closer look at the code and data flow in the Reflux TodoMVC implementation
 <p>To help curious window shoppers check out <a href="https://github.com/spoike/refluxjs">Reflux</a>, creator <a href="http://spoike.ghost.io/">Mikael Brassman</a> made a <a href="https://github.com/spoike/refluxjs-todo">TodoMVC version</a> using Reflux, <a href="http://facebook.github.io/react/">React</a> and <a href="https://github.com/rackt/react-router">react-router</a>.</p>
 <p>This post will walk through the code, although I&#39;ll use <a href="https://github.com/krawaller/refluxjs-todo">my own fork</a> which has some modifications which at the time of writing haven&#39;t been merged into the official repo.</p>
 <h3 id="the-reflux-data-flow-model">The Reflux data flow model</h3>
-<p>As detailed in our <a href="http://localhost:8000/newkrablog/posts/the-reflux-data-flow-model/">post on the Reflux data flow model</a>, Reflux takes a global pubsub approach but negates the bad parts of that by having lots of parallell channel who all transmit just one kind of event.</p>
+<p>As detailed in our <a href="http://blog.krawaller.se/posts/the-reflux-data-flow-model/">post on the Reflux data flow model</a>, Reflux takes a global pubsub approach but negates the bad parts of that by having lots of parallell channel who all transmit just one kind of event.</p>
 <p>We used this pucture to illustrate the model:</p>
 <p><img src="../../img/refluxflow2.jpeg" alt="Reflux data flow"></p>
 <p>As we will find, this model holds true for the TodoMVC app as well (apart from it not having a separate database).</p>
