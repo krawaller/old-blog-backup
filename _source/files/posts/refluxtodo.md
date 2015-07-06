@@ -28,7 +28,7 @@ This post will walk through the code, although I'll use [my own fork](https://gi
 
 ###The Reflux data flow model
 
-As detailed in our [post on the Reflux data flow model](http://localhost:8000/newkrablog/posts/the-reflux-data-flow-model/), Reflux takes a global pubsub approach but negates the bad parts of that by having lots of parallell channel who all transmit just one kind of event.
+As detailed in our [post on the Reflux data flow model](http://blog.krawaller.se/posts/the-reflux-data-flow-model/), Reflux takes a global pubsub approach but negates the bad parts of that by having lots of parallell channel who all transmit just one kind of event.
 
 We used this pucture to illustrate the model:
 
