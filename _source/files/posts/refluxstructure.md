@@ -222,7 +222,7 @@ So, is having many global channels really any better than having just one? As it
 
 On a higher level, the structure employed by Flux and Reflux are very similar. Flux too employs a global event bus approach, with event-specific channels. However, instead of making all actions into event dispatchers like Reflux, Flux employs a single "app dispatcher" much like Backbone, although with mechanisms in play to enforce the event-specific channel approach.
 
-The fact that Flux has a central Dispatcher makes for lots of cruft in the code, as our [previous code comparison](react-js-architecture-flux-vs-reflux/) between the two clearly demonstrated.
+The fact that Flux has a central Dispatcher makes for lots of cruft in the code, as our [previous code comparison](http://blog.krawaller.se/posts/react-js-architecture-flux-vs-reflux/) between the two clearly demonstrated.
 
 If you need more convincing, compare the [Reflux TodoMVC implementation](https://github.com/spoike/refluxjs-todo/) with the [Flux version](https://github.com/facebook/flux/tree/master/examples/flux-todomvc/).
 
