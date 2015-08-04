@@ -147,8 +147,12 @@ myMathLib.isDivisible(<span class="number">12</span>,<span class="number">3</spa
 <li><strong>tests:</strong> a JSON object defining our tests</li>
 <li><strong>I:</strong> an optional instance of <a href="https://facebook.github.io/immutable-js/">ImmutableJS</a>, more on this later</li>
 </ul>
-<p>As you saw in the example, the keys in the <code>tests</code> literal are string representations of the signature for the methods we are testing. The names must match the actual methods on the literal, and the parameter names are then reused inside the test spec for providing various test values to them.</p>
-<p>Apart from parameters each test also contains an <code>expected</code> key which holds the return value we will match for, and an optional <code>description</code> which will be used for the <code>it</code> call. If not provided a generic string is used.</p>
+<p>As you saw in the example, the keys in the <code>tests</code> literal are string representations of the signature for the methods we are testing. Here are the possible keys for the test spec:</p>
+<ul>
+<li><strong>expected:</strong> The value we want the tested method to return</li>
+<li><strong>description:</strong> An optional short description used for the <code>it</code> call. If not provided a generic string is used.</li>
+<li><strong>&lt;parameter&gt;:</strong> By using the same parameter names you put in the signature you can provide values for the various arguments</li>
+</ul>
 <h3 id="testing-context-method-usage">Testing context method usage</h3>
 <p>Let&#39;s say our <code>isDivisible</code> method is supposed to make a <code>this.processValue</code> call for each argument, and then use the return value for the calculation. Presumably this method takes care of parsing strings or something of the like. We can test for that by providing a <code>context</code> for the test:</p>
 <pre><code>literaltester(<span class="string">"my math lib"</span>,myMathLib,{

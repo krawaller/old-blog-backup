@@ -96,9 +96,11 @@ Here's a lowdown of the arguments:
 *    **tests:** a JSON object defining our tests
 *    **I:** an optional instance of [ImmutableJS](https://facebook.github.io/immutable-js/), more on this later
 
-As you saw in the example, the keys in the `tests` literal are string representations of the signature for the methods we are testing. The names must match the actual methods on the literal, and the parameter names are then reused inside the test spec for providing various test values to them.
+As you saw in the example, the keys in the `tests` literal are string representations of the signature for the methods we are testing. Here are the possible keys for the test spec:
 
-Apart from parameters each test also contains an `expected` key which holds the return value we will match for, and an optional `description` which will be used for the `it` call. If not provided a generic string is used.
+*    **expected:** The value we want the tested method to return
+*    **description:** An optional short description used for the `it` call. If not provided a generic string is used.
+*    **&lt;parameter&gt;:** By using the same parameter names you put in the signature you can provide values for the various arguments
 
 ### Testing context method usage
 
