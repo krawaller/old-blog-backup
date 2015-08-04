@@ -254,7 +254,7 @@ myMathLib.isDivisible(<span class="number">12</span>,<span class="number">3</spa
                                                 expect((lib[stubname].getCall(n)||{args:[]}).args.length).toEqual(args.length);
                                             });
                                             _.each(args,<span class="function"><span class="keyword">function</span><span class="params">(arg,a)</span>{</span>
-                                                it(<span class="string">"used correct parameter "</span>+a,<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+                                                it(<span class="string">"used correct value for parameter #"</span>+a,<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
                                                     <span class="keyword">var</span> usedargs = (lib[stubname].getCall(n)||{args:[]}).args;
                                                     expect((I?I.List(usedargs).toJS():usedargs)[a]).toEqual(givenargs[arg]||arg);
                                                 });

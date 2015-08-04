@@ -219,7 +219,7 @@ function tester(description,lib,methodtests,I){
 												expect((lib[stubname].getCall(n)||{args:[]}).args.length).toEqual(args.length);
 											});
 											_.each(args,function(arg,a){
-												it("used correct parameter "+a,function(){
+												it("used correct value for parameter #"+a,function(){
 													var usedargs = (lib[stubname].getCall(n)||{args:[]}).args;
 													expect((I?I.List(usedargs).toJS():usedargs)[a]).toEqual(givenargs[arg]||arg);
 												});
