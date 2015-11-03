@@ -96,7 +96,7 @@ _.combine([1,2,3],["a","b"],[”foo","bar","baz"]);
 // => [ [1,"a","foo"],[1,"a","bar"],[1,"a","baz"],[1,"b","foo"],[1,"b","bar"],[1,"b","baz"],[2,"a","foo"],[2,"a","bar"],[2,"a","baz"],[2,"b","foo"],[2,"b","bar"],[2,"b","baz"]]
 ```
 
-The number of combination will equal the product of the lengths of the given arrays, and each combination will contain as many elements as the number of arrays you fed into `combine`.
+The number of combinations will equal the product of the lengths of the given arrays, and each combination will contain as many elements as the number of arrays you fed into `combine`.
 
 This isn't something you'll need every day (which is why it was [shot down from Underscore](https://github.com/jashkenas/underscore/pull/1788)), but when you do need it, doing it manually is very verbose so a helper really cleans up the code (which is why I [tried to sell it to Underscore-contrib](https://github.com/documentcloud/underscore-contrib/pull/168) instead).
 

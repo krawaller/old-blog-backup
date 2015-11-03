@@ -9,9 +9,9 @@ type: post
 
 ###The Superhero battler app
 
-This post presents a simple React-Redux example app. The aim was to have a simple example to complement the official Redux ones, that is also more portable. It uses React, Redux, React-Router, React-Redux and browserify. And (almost) no ES6 syntax.
+This post presents a simple React-Redux example app. The aim was to have a small example to complement the official Redux ones, that is also more portable. It uses React, Redux, React-Router, React-Redux and browserify. And (almost) no ES6 syntax.
 
-Instead of the venerable ToDo, the app is a simple "game" where superheroes battle it out until there is only one left standing:
+Instead of the venerable ToDo, the app is a tiny "game" where superheroes battle it out until there's only one left standing:
 
 <iframe src="http://blog.krawaller.se/riastart2015/" style="height:500px;width:100%"></iframe>
 
@@ -45,7 +45,7 @@ ReactDOM.render(
 );
 ```
 
-We load `routes.js`, hook up `store.js`, and feed it all to `ReactDOM.render`!
+In here we load `routes.js`, hook up `store.js`, and feed it all to `ReactDOM.render`!
 
 ### Data model
 
@@ -311,7 +311,7 @@ var Hero = React.createClass({
 // connect to Redux store
 
 var mapStateToProps = function(state){
-	// This component will have access to `appstate.battlefield` through `this.props.battle`
+	// This component will have access to `appstate.heroes` through `this.props.heroes`
 	return {heroes:state.heroes};
 };
 

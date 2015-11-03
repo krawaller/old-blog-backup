@@ -80,8 +80,8 @@ Dissecting a small React-Redux example application
 
   <section class='post-content'>
   <h3 id="the-superhero-battler-app">The Superhero battler app</h3>
-<p>This post presents a simple React-Redux example app. The aim was to have a simple example to complement the official Redux ones, that is also more portable. It uses React, Redux, React-Router, React-Redux and browserify. And (almost) no ES6 syntax.</p>
-<p>Instead of the venerable ToDo, the app is a simple &quot;game&quot; where superheroes battle it out until there is only one left standing:</p>
+<p>This post presents a simple React-Redux example app. The aim was to have a small example to complement the official Redux ones, that is also more portable. It uses React, Redux, React-Router, React-Redux and browserify. And (almost) no ES6 syntax.</p>
+<p>Instead of the venerable ToDo, the app is a tiny &quot;game&quot; where superheroes battle it out until there&#39;s only one left standing:</p>
 <iframe src="http://blog.krawaller.se/riastart2015/" style="height:500px;width:100%"></iframe>
 
 <p>The url for the app is <a href="http://blog.krawaller.se/riastart2015/">http://blog.krawaller.se/riastart2015/</a>, and the source code is at <a href="https://github.com/krawaller/riastart2015">https://github.com/krawaller/riastart2015</a>.</p>
@@ -106,7 +106,7 @@ ReactDOM.render(
     document.getElementById("root")
 );</span></code></pre>
 
-<p>We load <code>routes.js</code>, hook up <code>store.js</code>, and feed it all to <code>ReactDOM.render</code>!</p>
+<p>In here we load <code>routes.js</code>, hook up <code>store.js</code>, and feed it all to <code>ReactDOM.render</code>!</p>
 <h3 id="data-model">Data model</h3>
 <p>Now we enter Redux land! I won&#39;t go into too much detail on how Redux works, as <a href="http://redux.js.org/">the official docs</a> are just marvelous at doing that. Instead we&#39;ll focus on how this app uses Redux.</p>
 <p>Here&#39;s what our store (in Redux there&#39;s only one) looks like:</p>
@@ -333,7 +333,7 @@ module.exports = Wrapper;</span></code></pre>
 <span class="comment">// connect to Redux store</span>
 
 <span class="keyword">var</span> mapStateToProps = <span class="function"><span class="keyword">function</span><span class="params">(state)</span>{</span>
-    <span class="comment">// This component will have access to `appstate.battlefield` through `this.props.battle`</span>
+    <span class="comment">// This component will have access to `appstate.heroes` through `this.props.heroes`</span>
     <span class="keyword">return</span> {heroes:state.heroes};
 };
 
