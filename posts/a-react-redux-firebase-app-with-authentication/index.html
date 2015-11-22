@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A React-Redux-Firebase app with authentication</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Another Redux sample app, this time coupled with Firebase. Demonstrates authentication, validation and keeping all UI state in Redux.
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/a-react-redux-firebase-app-with-authentication">A React-Redux-Firebase app with authentication</a>
+    <span class="post-meta">
+      <time datetime="Sun Nov 22 2015 01:00:00 GMT+0100 (CET)">Nov 22nd 2015</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+        <span><a href='../../tags/redux/'>redux</a></span>
+      
+        <span><a href='../../tags/firebase/'>firebase</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-quotes-app">The quotes app</h3>
+<p>This post presents an example app demonstrating how to can use Firebase on a React-Redux foundation. The app is a simple collection of quotes. If you log in (using Github credentials) you can add a new quote and edit/delete previous quotes added by you. Try it out below!</p>
+<iframe src="http://blog.krawaller.se/reduxfirebasedemo/" style="height:600px;width:100%"></iframe>
+
+<p>You&#39;ll find the code repo <a href="https://github.com/krawaller/reduxfirebasedemo">here</a>, and the app is published <a href="http://blog.krawaller.se/reduxfirebasedemo/#/?_k=98yl14">here</a>.</p>
+<p>The app was built as a demo for the <a href="https://coursepress.lnu.se/kurs/ria-utveckling-med-javascript/">RIA development course</a> I&#39;m running at <a href="http://lnu.se">Linnaeus university</a>.</p>
+<p>It is meant to serve as an example of several things:</p>
+<ul>
+<li>How to couple Redux and Firebase</li>
+<li>How to let Redux manage all UI state</li>
+<li>How to deal with validation in Redux</li>
+<li>How to handle authentication</li>
+</ul>
+<h3 id="app-state">App state</h3>
+<p>As with all Redux app, the entire state of the app is stored in an object in one single store. Here&#39;s what the <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/store/initialstate.js">initial state</a> looks like:</p>
+<pre><code><span class="keyword">var</span> C = <span class="built_in">require</span>(<span class="string">"../constants"</span>);
+
+module.exports = {
+    feedback: [
+        {msg:<span class="string">"Welcome to this little demo! It is meant to demonstrate three things:"</span>,error:<span class="literal">false</span>},
+        {msg:<span class="string">"1) How to use Redux + Firebase"</span>,error:<span class="literal">false</span>},
+        {msg:<span class="string">"2) How to use authentication in a Redux app"</span>,error:<span class="literal">false</span>},
+        {msg:<span class="string">"3) How to have all UI state in Redux and none in the components"</span>,error:<span class="literal">false</span>}
+    ],
+    auth: {
+        currently: C.ANONYMOUS,
+        username: <span class="literal">null</span>,
+        uid: <span class="literal">null</span>
+    },
+    quotes: {
+        hasreceiveddata: <span class="literal">false</span>,
+        submittingnew: <span class="literal">false</span>,
+        states: {}, <span class="comment">// this will store per quote id if we're reading, editing or awaiting DB response</span>
+        data: {} <span class="comment">// this will contain firebase data</span>
+    }
+};</code></pre>
+
+<p>As you can see the state can be divided into three parts;</p>
+<ol>
+<li><code>feedback</code>: An array of UI messages to the user</li>
+<li><code>auth</code>: Information about the currently logged in user</li>
+<li><code>quotes</code>: The actual list of quotes, and also the UI state of each quote</li>
+</ol>
+<p>We&#39;ll now look at the corresponding reducer and action creator for these three parts one at a time.</p>
+<h3 id="authentication">Authentication</h3>
+<p>Beginning with authentication, here&#39;s what the <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/store/reducers/auth.js">reducer</a> looks like:</p>
+<pre><code><span class="keyword">var</span> C = <span class="built_in">require</span>(<span class="string">"../../constants"</span>),
+    initialState = <span class="built_in">require</span>(<span class="string">"../initialstate"</span>);
+
+module.exports = <span class="function"><span class="keyword">function</span><span class="params">(currentstate,action)</span>{</span>
+    <span class="keyword">switch</span>(action.type){
+        <span class="keyword">case</span> C.ATTEMPTING_LOGIN:
+            <span class="keyword">return</span> {
+                currently: C.AWAITING_AUTH_RESPONSE,
+                username: <span class="string">"guest"</span>,
+                uid: <span class="literal">null</span>
+            };
+        <span class="keyword">case</span> C.LOGOUT:
+            <span class="keyword">return</span> {
+                currently: C.ANONYMOUS,
+                username: <span class="string">"guest"</span>,
+                uid: <span class="literal">null</span>
+            };
+        <span class="keyword">case</span> C.LOGIN_USER:
+            <span class="keyword">return</span> {
+                currently: C.LOGGED_IN,
+                username: action.username,
+                uid: action.uid
+            };
+        <span class="keyword">default</span>: <span class="keyword">return</span> currentstate || initialState.auth;
+    }
+};</code></pre>
+
+<p>You&#39;ll note there are three things that can happen;</p>
+<ol>
+<li><code>ATTEMPTING_LOGIN</code> which is the user having entered his credentials and now awaiting a response</li>
+<li><code>LOGIN_USER</code> represents a successfull login</li>
+<li><code>LOGOUT</code> means we discard the current user credentials and reenter guestmode</li>
+</ol>
+<p>So far we&#39;ve seen no trace of actual Firebase code, which is to be expected. The reducers should always be instantaneous and free of side effects, and simply react synchronously to an action notification just received.</p>
+<p>Instead, the related Firebase code can be found in the <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/actions/auth.js">authentication action creators</a>:</p>
+<pre><code><span class="keyword">var</span> C = <span class="built_in">require</span>(<span class="string">"../constants"</span>),
+    Firebase = <span class="built_in">require</span>(<span class="string">"firebase"</span>),
+    fireRef = <span class="keyword">new</span> Firebase(C.FIREBASE);
+
+module.exports = {
+    <span class="comment">// called at app start</span>
+    startListeningToAuth: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(dispatch,getState)</span>{</span>
+            fireRef.onAuth(<span class="function"><span class="keyword">function</span><span class="params">(authData)</span>{</span>
+                <span class="keyword">if</span> (authData){ 
+                    dispatch({
+                        type: C.LOGIN_USER,
+                        uid: authData.uid,
+                        username: authData.github.displayName || authData.github.username
+                    });
+                } <span class="keyword">else</span> {
+                    <span class="keyword">if</span> (getState().auth.currently !== C.ANONYMOUS){ <span class="comment">// log out if not already logged out</span>
+                        dispatch({type:C.LOGOUT});
+                    }
+                }
+            });
+        }
+    },
+    attemptLogin: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(dispatch,getState)</span>{</span>
+            dispatch({type:C.ATTEMPTING_LOGIN});
+            fireRef.authWithOAuthPopup(<span class="string">"github"</span>, <span class="function"><span class="keyword">function</span><span class="params">(error, authData)</span> {</span>
+                <span class="keyword">if</span> (error) {
+                    dispatch({type:C.DISPLAY_ERROR,error:<span class="string">"Login failed! "</span>+error});
+                    dispatch({type:C.LOGOUT});
+                } <span class="keyword">else</span> {
+                    <span class="comment">// no need to do anything here, startListeningToAuth have already made sure that we update on changes</span>
+                }
+            });
+        };
+    },
+    logoutUser: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(dispatch,getState)</span>{</span>
+            dispatch({type:C.LOGOUT}); <span class="comment">// don't really need to do this, but nice to get immediate feedback</span>
+            fireRef.unauth();
+        };
+    }
+};</code></pre>
+
+<p>We&#39;re using <a href="https://github.com/gaearon/redux-thunk">Redux-Thunk</a> which allows for the action creators to return a function instead of a straight-up actions object, making asynchronous actions possible.</p>
+<p>There are three authentication-related action creators;</p>
+<ol>
+<li><code>startListeningToAuth</code> is called att app start, setting upp the real-time updates from Firebase. This means we never have to bother catching the result of subsequent auth requests made to Firebase, this listener will catch them all!</li>
+<li><code>attemptLogin</code> is when a user submits his credentials. This synchronously fires an <code>ATTEMPTING_LOGIN</code> action, setting the spinner to notify the user that judgement is a-coming.</li>
+<li><code>logoutUser</code> is when a user clicks log out. Note that we synchronously log out here, not totally necessary since Firebase would push the log out to us.</li>
+</ol>
+<p>Here&#39;s what the <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/index.js">app-start kickoff</a> looks like:</p>
+<pre><code><span class="keyword">var</span> React = <span class="built_in">require</span>(<span class="string">'react'</span>),
+    ReactDOM = <span class="built_in">require</span>(<span class="string">'react-dom'</span>),
+    Router = <span class="built_in">require</span>(<span class="string">'react-router'</span>).Router,
+    Provider = <span class="built_in">require</span>(<span class="string">'react-redux'</span>).Provider,
+    store = <span class="built_in">require</span>(<span class="string">'./store'</span>),
+    routes = <span class="built_in">require</span>(<span class="string">'./routes'</span>),
+    actions = <span class="built_in">require</span>(<span class="string">'./actions'</span>)
+
+ReactDOM.render(
+    <span class="xml"><span class="tag">&lt;<span class="title">Provider</span> <span class="attribute">store</span>=<span class="value">{store}</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">Router</span> <span class="attribute">routes</span>=<span class="value">{routes}</span>/&gt;</span>
+    <span class="tag">&lt;/<span class="title">Provider</span>&gt;</span>,
+    document.getElementById("root")
+);
+
+setTimeout(function(){
+    store.dispatch( actions.startListeningToAuth() );
+    store.dispatch( actions.startListeningToQuotes() );
+});</span></code></pre>
+
+<p>Note the action calls at the very bottom.</p>
+<p>Now you&#39;ve seen all authentication-related code. This code ensures that <code>appstate.auth</code> contains the current user, which can then be queried by your other code. In a production app you&#39;d also have security rules on the Firebase side of things to prevent easy manipulation.</p>
+<h3 id="quotes">Quotes</h3>
+<p>Now let&#39;s look at the quotes-related code. To save you scrolling back, here&#39;s what the quote state looked like:</p>
+<pre><code>quotes: {
+    hasreceiveddata: <span class="literal">false</span>,
+    submittingnew: <span class="literal">false</span>,
+    states: {}, <span class="comment">// this will store per quote id if we're reading, editing or awaiting DB response</span>
+    data: {} <span class="comment">// this will contain firebase data</span>
+}</code></pre>
+
+<p>With that fresh on our retinas, here&#39;s the <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/store/reducers/quotes.js">reducer</a>:</p>
+<pre><code><span class="keyword">var</span> C = <span class="built_in">require</span>(<span class="string">"../../constants"</span>),
+    initialState = <span class="built_in">require</span>(<span class="string">"../initialstate"</span>),
+    _ = <span class="built_in">require</span>(<span class="string">"lodash"</span>);
+
+module.exports = <span class="function"><span class="keyword">function</span><span class="params">(currentstate,action)</span>{</span>
+    <span class="keyword">var</span> newstate;
+    <span class="keyword">switch</span>(action.type){
+        <span class="keyword">case</span> C.RECEIVE_QUOTES_DATA:
+            <span class="keyword">return</span> <span class="built_in">Object</span>.assign({},currentstate,{
+                hasreceiveddata: <span class="literal">true</span>,
+                data: action.data
+            });
+        <span class="keyword">case</span> C.AWAIT_NEW_QUOTE_RESPONSE:
+            <span class="keyword">return</span> <span class="built_in">Object</span>.assign({},currentstate,{
+                submittingnew: <span class="literal">true</span>
+            });
+        <span class="keyword">case</span> C.RECEIVE_NEW_QUOTE_RESPONSE:
+            <span class="keyword">return</span> <span class="built_in">Object</span>.assign({},currentstate,{
+                submittingnew: <span class="literal">false</span>
+            });
+        <span class="keyword">case</span> C.START_QUOTE_EDIT:
+            newstate = _.cloneDeep(currentstate);
+            newstate.states[action.qid] = C.EDITING_QUOTE;
+            <span class="keyword">return</span> newstate;
+        <span class="keyword">case</span> C.FINISH_QUOTE_EDIT:
+            newstate = _.cloneDeep(currentstate);
+            <span class="keyword">delete</span> newstate.states[action.qid];
+            <span class="keyword">return</span> newstate;
+        <span class="keyword">case</span> C.SUBMIT_QUOTE_EDIT:
+            newstate = _.cloneDeep(currentstate);
+            newstate.states[action.qid] = C.SUBMITTING_QUOTE;
+            <span class="keyword">return</span> newstate;
+        <span class="keyword">default</span>: <span class="keyword">return</span> currentstate || initialState.quotes;
+    }
+};</code></pre>
+
+<p>As the switch statement shows there are 6 quote actions:</p>
+<ol>
+<li><code>RECEIVE_QUOTES_DATA</code> means an update from Firebase. We grab that payload and put it in <code>appstate.quotes.data</code>.</li>
+<li><code>AWAIT_NEW_QUOTE_RESPONSE</code> is when we have submitted a new quote but haven&#39;t yet had an answer, so we should show a spinner in the form for adding new quotes.</li>
+<li><code>RECEIVE_NEW_QUOTE_RESPONSE</code> means we got the answer on our request to add a new quote, so the new quote form should no longer show a spinner.</li>
+<li><code>START_QUOTE_EDIT</code> is when a user clicked &quot;edit&quot; on a quote he/she has written, so that qoute should now be displayed in a form.</li>
+<li><code>C.FINISH_QUOTE_EDIT</code> means they cancelled or received submit result, so the quote should no longer be displayed in a form</li>
+<li><code>SUBMIT_QUOTE_EDIT</code> is when they submitted an edit, so the form for that quote should now display a spinner.</li>
+</ol>
+<p>Let&#39;s take a look at the render function for <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/pages/components/quote.js">a single quote</a>, showing off all the quote state we&#39;ve seen so far:</p>
+<pre><code><span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="keyword">var</span> p = <span class="keyword">this</span>.props,
+        q = p.quote,
+        button;
+    <span class="keyword">if</span> (p.state === C.EDITING_QUOTE){
+        <span class="keyword">return</span> (<span class="xml"><span class="tag">&lt;<span class="title">form</span> <span class="attribute">className</span>=<span class="value">"quote"</span> <span class="attribute">onSubmit</span>=<span class="value">{this.submit}</span>&gt;</span>
+            <span class="tag">&lt;<span class="title">input</span> <span class="attribute">ref</span>=<span class="value">"field"</span> <span class="attribute">defaultValue</span>=<span class="value">{q.content}</span>/&gt;</span>
+            <span class="tag">&lt;<span class="title">button</span> <span class="attribute">type</span>=<span class="value">"button"</span> <span class="attribute">onClick</span>=<span class="value">{p.cancel}</span>&gt;</span>Cancel<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+            <span class="tag">&lt;<span class="title">button</span> <span class="attribute">type</span>=<span class="value">"submit"</span> <span class="attribute">onClick</span>=<span class="value">{this.submit}</span>&gt;</span>Submit<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+        <span class="tag">&lt;/<span class="title">form</span>&gt;</span>);
+    }
+    if (!p.mayedit){
+        button = ""
+    } else if (p.state === C.SUBMITTING_QUOTE) {
+        button = <span class="tag">&lt;<span class="title">button</span> <span class="attribute">disabled</span>=<span class="value">"disabled"</span>&gt;</span>Submitting...<span class="tag">&lt;/<span class="title">button</span>&gt;</span>;</span>
+    } <span class="keyword">else</span> {
+        button = <span class="xml"><span class="tag">&lt;<span class="title">span</span>&gt;</span><span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{p.edit}</span>&gt;</span>Edit<span class="tag">&lt;/<span class="title">button</span>&gt;</span><span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{p.delete}</span>&gt;</span>Delete<span class="tag">&lt;/<span class="title">button</span>&gt;</span><span class="tag">&lt;/<span class="title">span</span>&gt;</span>;</span>
+    }
+    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="title">div</span> <span class="attribute">className</span>=<span class="value">"quote"</span>&gt;</span><span class="tag">&lt;<span class="title">span</span> <span class="attribute">className</span>=<span class="value">"author"</span>&gt;</span>{q.username+" said: "}<span class="tag">&lt;/<span class="title">span</span>&gt;</span>{q.content} {button}<span class="tag">&lt;/<span class="title">div</span>&gt;</span>;</span>
+}</code></pre>
+
+<p>The quote is rendered in a <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/pages/quoteslist.js">quotelist parent component</a>. This parent component is connected to Redux using <a href="https://github.com/rackt/react-redux">React-Redux</a>:</p>
+<pre><code><span class="keyword">var</span> mapStateToProps = <span class="function"><span class="keyword">function</span><span class="params">(appState)</span>{</span>
+    <span class="keyword">return</span> {
+        quotes: appState.quotes,
+        auth: appState.auth
+    };
+};
+
+<span class="keyword">var</span> mapDispatchToProps = <span class="function"><span class="keyword">function</span><span class="params">(dispatch)</span>{</span>
+    <span class="keyword">return</span> {
+        submitNewQuote: <span class="function"><span class="keyword">function</span><span class="params">(content)</span>{</span> dispatch(actions.submitNewQuote(content)); },
+        startEdit: <span class="function"><span class="keyword">function</span><span class="params">(qid)</span>{</span> dispatch(actions.startQuoteEdit(qid)); },
+        cancelEdit: <span class="function"><span class="keyword">function</span><span class="params">(qid)</span>{</span> dispatch(actions.cancelQuoteEdit(qid)); },
+        submitEdit: <span class="function"><span class="keyword">function</span><span class="params">(qid,content)</span>{</span> dispatch(actions.submitQuoteEdit(qid,content)); },
+        deleteQuote: <span class="function"><span class="keyword">function</span><span class="params">(qid)</span>{</span> dispatch(actions.deleteQuote(qid)); }
+    }
+};
+
+module.exports = ReactRedux.connect(mapStateToProps,mapDispatchToProps)(Quoteslist);</code></pre>
+
+<p>And it renders each quote like thus, passing down the relevant state and callbacks:</p>
+<pre><code><span class="keyword">var</span> p = <span class="keyword">this</span>.props, rows = _.map(p.quotes.data,<span class="function"><span class="keyword">function</span><span class="params">(quote,qid)</span>{</span>
+    <span class="keyword">var</span> quotestate = p.quotes.states[qid];
+    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="title">Quote
+        key={qid}
+        quote={quote}
+        qid={qid}
+        state={quotestate}
+        edit={p.startEdit.bind(this,qid)}
+        cancel={p.cancelEdit.bind(this,qid)}
+        submit={p.submitEdit.bind(this,qid)}
+        delete={p.deleteQuote.bind(this,qid)}
+        mayedit={p.auth.uid</span> =<span class="value">==</span> <span class="attribute">quote.uid</span>}
+    /&gt;</span>;</span>
+}).reverse();</code></pre>
+
+<h3 id="feedback">Feedback</h3>
+<p>For completion&#39;s sake let&#39;s also look at the feedback functionality, which is much simpler and doesn&#39;t include Firebase. The feedback state is just an array of string messages to show:</p>
+<pre><code>feedback: [
+    {msg:<span class="string">"Welcome to this little demo! It is meant to demonstrate three things:"</span>,error:<span class="literal">false</span>},
+    {msg:<span class="string">"1) How to use Redux + Firebase"</span>,error:<span class="literal">false</span>},
+    {msg:<span class="string">"2) How to use authentication in a Redux app"</span>,error:<span class="literal">false</span>},
+    {msg:<span class="string">"3) How to have all UI state in Redux and none in the components"</span>,error:<span class="literal">false</span>}
+]</code></pre>
+
+<p>The <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/store/reducers/feedback.js">feedback reducer</a> deals with 3 actions:</p>
+<pre><code>module.exports = <span class="function"><span class="keyword">function</span><span class="params">(currentfeedback,action)</span>{</span>
+    <span class="keyword">switch</span>(action.type){
+        <span class="keyword">case</span> C.DISMISS_FEEDBACK:
+            <span class="keyword">return</span> currentfeedback.filter((i,n)=&gt;n!==action.num);
+        <span class="keyword">case</span> C.DISPLAY_ERROR:
+            <span class="keyword">return</span> currentfeedback.concat({msg:action.error,error:<span class="literal">true</span>});
+        <span class="keyword">case</span> C.DISPLAY_MESSAGE:
+            <span class="keyword">return</span> currentfeedback.concat({msg:action.message,error:<span class="literal">false</span>});
+        <span class="keyword">default</span>: <span class="keyword">return</span> currentfeedback || initialState.feedback;
+    }
+};</code></pre>
+
+<p>And the related <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/actions/feedback.js">feedback action creator</a> is only the feedback dismissal is the result of a user interaction:</p>
+<pre><code>module.exports = {
+    dismissFeedback: <span class="function"><span class="keyword">function</span><span class="params">(num)</span>{</span>
+        <span class="keyword">return</span> {type:C.DISMISS_FEEDBACK,num:num};
+    }
+};</code></pre>
+
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>Perhaps this demo took on more than it can chew, but I hope it at least can serve as an example of how to pair Redux and Firebase in a sane way.</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
