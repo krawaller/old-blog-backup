@@ -71,7 +71,7 @@ Metalsmith(__dirname)
       author: 'The Krawaller brothers'
     }
   })
-  .use(drafts())
+  //.use(drafts())
   .use(collections({posts: {pattern:'posts/*.md',sortBy:"date",reverse:true}}))
   .use(tags({path:"tags/"}))
   .use(function(files,metalsmith,done){
