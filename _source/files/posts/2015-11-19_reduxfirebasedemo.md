@@ -1,7 +1,7 @@
 ---
 title: A React-Redux-Firebase app with authentication
 author: David
-tags: [react, redux, firebase]
+tags: [react, redux, case study, firebase]
 date: 2015-11-22
 excerpt: "Another Redux sample app, this time coupled with Firebase. Demonstrates authentication, validation and keeping all UI state in Redux."
 type: post

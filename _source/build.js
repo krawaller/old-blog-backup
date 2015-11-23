@@ -4,7 +4,7 @@ var Metalsmith = require('metalsmith'),
 	permalinks = require('metalsmith-permalinks'),
 	metallic = require('metalsmith-metallic'),
   collections = require('metalsmith-collections'),
-  sass = require('metalsmith-sass'),
+  //sass = require('metalsmith-sass'),
   feed = require('metalsmith-feed'),
   drafts = require('metalsmith-drafts'),
   Handlebars = require('handlebars'),
@@ -82,7 +82,7 @@ Metalsmith(__dirname)
   })
   .use(metallic({classPrefix:''}))
   .use(markdown())
-  .use(sass({outputStyle:"expanded"}))
+  //.use(sass({outputStyle:"expanded"}))
   .use(permalinks({pattern: ':collection/:title'}))
   .use(templates({engine: 'handlebars',directory: './templates', master:'master.hbt', pattern: ["*/*/*html","*html"]}))
   .use(feed({collection:"posts",limit:false,destination:'./rss.xml'}))

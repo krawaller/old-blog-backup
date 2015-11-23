@@ -1,7 +1,7 @@
 ---
 title: A React-Redux example app 
 author: David
-tags: [react, redux]
+tags: [react, redux, case study]
 date: 2015-10-29
 excerpt: "Dissecting a small React-Redux example application"
 type: post
