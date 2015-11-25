@@ -315,6 +315,8 @@ var p = this.props, rows = _.map(p.quotes.data,function(quote,qid){
 }).reverse();
 ```
 
+Note how it checks if you're allowed to edit this quote by comparing `quote.uid` with the `uid` of the currently logged in user.
+
 ### Feedback
 
 For completion's sake let's also look at the feedback functionality, which is much simpler and doesn't include Firebase. The feedback state is just an array of string messages to show:

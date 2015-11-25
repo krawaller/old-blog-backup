@@ -351,6 +351,7 @@ module.exports = ReactRedux.connect(mapStateToProps,mapDispatchToProps)(Quotesli
     /&gt;</span>;</span>
 }).reverse();</code></pre>
 
+<p>Note how it checks if you&#39;re allowed to edit this quote by comparing <code>quote.uid</code> with the <code>uid</code> of the currently logged in user.</p>
 <h3 id="feedback">Feedback</h3>
 <p>For completion&#39;s sake let&#39;s also look at the feedback functionality, which is much simpler and doesn&#39;t include Firebase. The feedback state is just an array of string messages to show:</p>
 <pre><code>feedback: [
