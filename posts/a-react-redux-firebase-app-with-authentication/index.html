@@ -374,7 +374,7 @@ module.exports = ReactRedux.connect(mapStateToProps,mapDispatchToProps)(Quotesli
     }
 };</code></pre>
 
-<p>And the related <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/actions/feedback.js">feedback action creator</a> is only the feedback dismissal is the result of a user interaction:</p>
+<p>And the related <a href="https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/actions/feedback.js">feedback action creator</a> contains just one single thing, namely a function to dismiss a feedback message. Adding messages / errors are only done inside of other action creators.</p>
 <pre><code>module.exports = {
     dismissFeedback: <span class="function"><span class="keyword">function</span><span class="params">(num)</span>{</span>
         <span class="keyword">return</span> {type:C.DISMISS_FEEDBACK,num:num};

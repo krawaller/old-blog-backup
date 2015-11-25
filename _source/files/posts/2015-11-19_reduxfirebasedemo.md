@@ -346,7 +346,7 @@ module.exports = function(currentfeedback,action){
 };
 ```
 
-And the related [feedback action creator](https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/actions/feedback.js) is only the feedback dismissal is the result of a user interaction:
+And the related [feedback action creator](https://github.com/krawaller/reduxfirebasedemo/blob/gh-pages/src/actions/feedback.js) contains just one single thing, namely a function to dismiss a feedback message. Adding messages / errors are only done inside of other action creators.
 
 ```javascript
 module.exports = {
