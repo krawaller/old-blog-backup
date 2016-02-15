@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Simple logger</title>
+  <script src="../redux.js"></script>
+</head>
+<body>
+
+<em>Do we get a return from a thunk?</em>
+
+<div id="app"></div>
+<div id="log"></div>
+
+<script type="text/javascript" src="../boilerplatestart.js"></script>
+
+<script type="text/javascript">
+
+
+
+var store = createStore(reducer,applyMiddleware(thunk));
+
+</script>
+
+<script type="text/javascript">
+
+store.subscribe(render);
+render();
+
+var thunkClick = function(){
+    return function(dispatch,getState){
+        return dispatch({ type: 'INCREMENT', by: 1 });
+    }
+}
+
+var normalClick = function(){
+    return ({ type: 'INCREMENT', by: 1 });
+}
+
+
+document.addEventListener('click', function(e){
+   store.dispatch(thunkClick())
+});
+
+</script>
+
+</body>
+</html>

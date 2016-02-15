@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exploring Redux middleware</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+A series of simple stand-alone experiments to understand Redux Middleware
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/exploring-redux-middleware">Exploring Redux middleware</a>
+    <span class="post-meta">
+      <time datetime="Mon Feb 15 2016 01:00:00 GMT+0100 (CET)">Feb 15th 2016</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/redux/'>redux</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>This blog post is made up by a series of tiny experiments aiming to <strong>better our understanding of Redux middlewares</strong>. You are assumed to be familiar with the basic functionality of Redux.</p>
+<p>Throughout we&#39;ll use a ridiculously simple counter reducer. It knows only of a single action, <code>INCREMENT</code>, and when that is encountered it increases state with the <code>by</code> payload (thus the state is not an object but a simple number):</p>
+<pre><code><span class="keyword">var</span> reducer = <span class="function"><span class="keyword">function</span><span class="params">(state,action)</span>{</span>
+    state = state || <span class="number">0</span>;
+    <span class="keyword">switch</span>(action.type){
+        <span class="keyword">case</span> <span class="string">'INCREMENT'</span>: <span class="keyword">return</span> state + (action.by || <span class="number">1</span>);
+        <span class="keyword">default</span>: <span class="keyword">return</span> state;
+    }
+}</code></pre>
+
+<p>Just to try this out we can create a store with no middlewares...</p>
+<pre><code><span class="keyword">var</span> store = Redux.createStore(reducer);</code></pre>
+
+<p>...and, assuming an html document with Redux and a <code>div</code> with id <code>app</code>, we can hook this up like this:</p>
+<pre><code><span class="comment">// make render run on every change to store, and run an initial render</span>
+store.subscribe(render);
+render();
+
+<span class="comment">// increase counter anytime page is clicked</span>
+document.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">(e)</span>{</span>
+    store.dispatch({ type: <span class="string">'INCREMENT'</span>, by: <span class="number">1</span> });
+});</code></pre>
+
+<p>Try it out in the iframe below (or stand-alone <a href="../../applets/reduxmiddleware/experiments/nomiddleware.html">here</a>)</p>
+<iframe src="../../applets/reduxmiddleware/experiments/nomiddleware.html" height="100px" width="100%"></iframe>
+
+<p>The following experiments will all be slight variations of this little app. Each will have a standalone link to an html document containing the full code, apart from Redux itself. There will be no other dependencies at all.</p>
+<p>I&#39;ll also be avoiding ES6 syntax to make it more clear what&#39;s going on, as arrow functions and implicit returns tend to muddy the waters a bit.</p>
+<h3 id="the-simplest-possible-middleware">The simplest possible middleware</h3>
+<p>A middleware sits on top <code>store.dispatch</code>. Each applied middleware is given a dispatched action object, doing their thing before passing it on to the next middleware in line, until it finally reaches the original <code>store.dispatch</code> which will call the reducer.</p>
+<p>To get a sense for what the middleware looks like, check out this simplest possible middleware which does nothing but pass the action along:</p>
+<pre><code><span class="keyword">var</span> noop = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            <span class="keyword">return</span> next(action);
+        }
+    }
+}</code></pre>
+
+<p>The <code>middlewareAPI</code> object we&#39;re being passed up top contains <code>dispatch</code> and <code>getState</code>, letting us do all kinds of things should we want to. Here we&#39;re only doing what we&#39;re supposed to, namely passing the <code>action</code> on to the <code>next</code> in line, which in this case will be the actual <code>store.dispatch</code> since there&#39;s no other middleware.</p>
+<p>Just as a sanity check, let&#39;s create a store using this useless middleware...</p>
+<pre><code><span class="keyword">var</span> middlewares = Redux.applyMiddleware(noop);
+<span class="keyword">var</span> store = Redux.createStore(reducer,middlewares);</code></pre>
+
+<p>...and check that it is still functioning exactly like before (standalone <a href="../../applets/reduxmiddleware/experiments/noop.html">here</a>):</p>
+<iframe src="../../applets/reduxmiddleware/experiments/noop.html" height="100px" width="100%"></iframe>
+
+<p>Things appear to still be working as they should.</p>
+<h3 id="a-breadcrumb-trail">A breadcrumb trail</h3>
+<p>In order to decipher what&#39;s going on, let&#39;s add a logging mechanism to our app! We add a <code>&lt;div id=&quot;log&quot;/&gt;</code> to the page, and write to it using this <code>output</code> function:</p>
+<pre><code><span class="comment">// put stuff into the log</span>
+<span class="keyword">var</span> output = <span class="function"><span class="keyword">function</span><span class="params">(txt)</span>{</span>
+    <span class="keyword">var</span> newparagraph = document.createElement(<span class="string">"div"</span>);
+    newparagraph.innerHTML = txt;
+    document.getElementById(<span class="string">"log"</span>).appendChild(newparagraph);
+}</code></pre>
+
+<p>Now we create a <code>logger</code> middleware which uses <code>output</code> to spy on what&#39;s happening. Actually, let&#39;s make a <code>loggerFactory(name)</code>, so we can have more than one <code>logger</code> with different names and track when the various parts of the middlewares are being called:</p>
+<pre><code><span class="keyword">var</span> loggerFactory = <span class="function"><span class="keyword">function</span><span class="params">(name)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+        output(name+<span class="string">": created"</span>);
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+            output(name+<span class="string">": middle callback called"</span>);
+            <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+                output(name+<span class="string">": inner callback called with action "</span>+<span class="built_in">JSON</span>.stringify(action));
+                <span class="keyword">var</span> ret = next(action);
+                output(name+<span class="string">": State after calling next: "</span>+middlewareAPI.getState());
+                <span class="keyword">return</span> ret;
+            }
+        }
+    }
+}</code></pre>
+
+<p>Note how we use <code>middlewareAPI.getState</code> to query the updated state after the <code>next</code> call.</p>
+<p>We create a store with two of these loggers:</p>
+<pre><code>var log1 = loggerFactory(<span class="string">"log1"</span>),
+    log2 = loggerFactory(<span class="string">"log2"</span>),
+    middlewares = Redux<span class="preprocessor">.applyMiddleware</span>(log1,log2),
+    store = Redux<span class="preprocessor">.createStore</span>(reducer,middlewares)<span class="comment">;</span></code></pre>
+
+<p>It&#39;s a bit spammy, but should give a good sense of what&#39;s going on (standalone <a href="../../applets/reduxmiddleware/experiments/logger.html">here</a>):</p>
+<iframe src="../../applets/reduxmiddleware/experiments/logger.html" height="400px" width="100%"></iframe>
+
+<p>Matching the spam to the various parts of the middleware, here&#39;s what we can deduce:</p>
+<pre><code><span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span> <span class="comment">// called at start, left to right</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span> <span class="comment">// called at start, right to left</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span> <span class="comment">// called per action</span>
+            <span class="comment">// code before `next` call runs left to right</span>
+            <span class="keyword">var</span> ret = next(action);
+            <span class="comment">// code after next call runs right to left</span>
+            <span class="keyword">return</span> ret;
+        }
+    }
+}</code></pre>
+
+<h3 id="having-some-fun">Having some fun</h3>
+<p>Just to internalize our findings so far, let&#39;s make some silly middlewares that messes about with the <code>next</code> call! First we have a <code>deaf</code> middleware which will only hear what you say a third of the time:</p>
+<pre><code><span class="keyword">var</span> deaf = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">var</span> i = <span class="number">0</span>;
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            <span class="keyword">if</span> (!(i++%<span class="number">3</span>)) {
+                next(action);
+            }
+        }
+    }
+}</code></pre>
+
+<p>Next we have <code>nervous</code> who will execute every action twice just to be sure:</p>
+<pre><code><span class="keyword">var</span> nervous = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            next(action);
+            next(action);
+        }
+    }
+}</code></pre>
+
+<p>Finally there&#39;s <code>impatient</code> who will set <code>.by</code> to 5 instead of the default 1:</p>
+<pre><code><span class="keyword">var</span> impatient = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            <span class="comment">// it is good form not to mutate action so we make a copy</span>
+            next(<span class="built_in">Object</span>.assign({},action,{by:<span class="number">5</span>}));
+        }
+    }
+}</code></pre>
+
+<p>We whip up a store using all three, in the mentioned order:</p>
+<pre><code><span class="keyword">var</span> middlewares = Redux.applyMiddleware(deaf,nervous,impatient),
+    store = Redux.createStore(reducer,middlewares);</code></pre>
+
+<p>The net result should be that only every third click registers, but that click will increase the counter by 2*5 (standalone <a href="../../applets/reduxmiddleware/experiments/havingsomefun.html">here</a>):</p>
+<iframe src="../../applets/reduxmiddleware/experiments/havingsomefun.html" height="100px" width="100%"></iframe>
+
+
+<h3 id="snooping-at-final-next-">Snooping at final <code>next</code></h3>
+<p>Since the action eventually ends up with the regular <code>store.dispatch</code>, that implies that <code>next</code> inside the final middleware <strong>is</strong> the vanilla <code>store.dispatch</code>. Let&#39;s see if that holds true! We make a middleware that makes the comparison: </p>
+<pre><code><span class="keyword">var</span> vanilladispatch = Redux.createStore(reducer).dispatch;
+<span class="keyword">var</span> snoopForVanilla = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            output(<span class="string">"next === vanilla dispatch? "</span>+(next.toString() === vanilladispatch.toString()));
+            <span class="keyword">return</span> next(action);
+        }
+    }
+}</code></pre> 
+
+<p>Note how we cannot compare references directly since they obviously won&#39;t be the same (as we picked <code>dispatch</code> from a non-middlewared throwaway store), so we turn them to strings before we check equality.</p>
+<p>Now, let&#39;s put it to the test (standalone <a href="../../applets/reduxmiddleware/experiments/snoopvanillanaive.html">here</a>)!</p>
+<iframe src="../../applets/reduxmiddleware/experiments/snoopvanillanaive.html" height="120px" width="100%"></iframe>
+
+<p>It seems our assumption was correct!</p>
+<h3 id="snooping-at-following-middleware">Snooping at following middleware</h3>
+<p>This raises a question - what is <code>next</code> from the perspective of a middleware who <strong>isn&#39;t</strong> last in the chain? Let&#39;s revive or old friend the <code>noop</code> middleware:</p>
+<pre><code><span class="keyword">var</span> noop = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            <span class="keyword">return</span> next(action);
+        }
+    }
+}</code></pre>
+
+<p>If we put it at the end and a snooper before it, what would that snooper actually see? An easy way to test that would be to simply log out <code>next</code>, so let&#39;s create a snooper doing that:</p>
+<pre><code><span class="keyword">var</span> snooper = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            output(<span class="string">"snooping at `next`: "</span>+next);
+            <span class="keyword">return</span> next(action);
+        }
+    }
+}</code></pre>
+
+<p>We put both in a store, taking care to put <code>snooper</code> before <code>noop</code>:</p>
+<pre><code><span class="keyword">var</span> middlewares = Redux.applyMiddleware(snooper,noop),
+    store = Redux.createStore(reducer,middlewares);</code></pre>
+
+<p>...and voilà (standalone <a href="../../applets/reduxmiddleware/experiments/snoopatfriend.html">here</a>):</p>
+<iframe src="../../applets/reduxmiddleware/experiments/snoopatfriend.html" height="150px" width="100%"></iframe>
+
+<p>It seems inner part of the middleware becomes the <code>next</code>. Which makes sense as the inner part is what takes the action as an argument, and it is the action we&#39;re feeding to <code>next</code>!</p>
+<p>Curious what would happen if we put snooper last in the chain? You&#39;d get a facefull of <a href="https://github.com/reactjs/redux/blob/e7295c33776be6199b826817934dadad5d0f9bb1/src/createStore.js#L148-L180">Redux source code</a> is what. Hack the standalone version and try it!</p>
+<h3 id="dispatch-return-value">Dispatch return value</h3>
+<p>Ok, so the middleware passes the action along by calling the <code>next</code> it is given. But why does it return the result of that <code>next</code> call? Since the action chain is done through the <code>next</code> call, what purpose does that return value serve? </p>
+<p>A clue might be that the <a href="http://redux.js.org/docs/api/Store.html#dispatch">documentation says</a> that <code>store.dispatch(action)</code> returns the action you passed in. The docs also notes, however, that middlewares can mess with the return value.</p>
+<p>First off, let&#39;s just hack the click handler to also output the return from <code>dispatch</code> to the log:</p>
+<pre><code>document.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">(e)</span>{</span>
+    <span class="keyword">var</span> ret = store.dispatch({ type: <span class="string">'INCREMENT'</span>, by: <span class="number">1</span> });
+    output(<span class="string">"return: "</span>+<span class="built_in">JSON</span>.stringify(ret));
+});</code></pre>
+
+<p>We run this with a no-middleware store (standalone <a href="../../applets/reduxmiddleware/experiments/outputreturn.html">here</a>):</p>
+<iframe src="../../applets/reduxmiddleware/experiments/outputreturn.html" height="150px" width="100%"></iframe>
+
+<p>Unsurprisingly it seems the docs told the truth - we simply get the action object back.</p>
+<p>And, also unsurprisingly, if we insert a stupid middleware which returns some bogus crap:</p>
+<pre><code><span class="keyword">var</span> sillynoop = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
+    <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
+        <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(action)</span>{</span>
+            next(action);
+            <span class="keyword">return</span> <span class="string">"WOO!"</span>;
+        }
+    }
+}</code></pre>
+
+<p>...then bogus crap is what comes out at the end of the chain, even if we put a regular noop before and after:</p>
+<pre><code><span class="comment">// setting up the store</span>
+<span class="keyword">var</span> middlewares = Redux.applyMiddleware(noop,sillynoop,noop),
+    store = Redux.createStore(reducer,middlewares);</code></pre>
+
+
+<p>See for yourself (standalone <a href="../../applets/reduxmiddleware/experiments/outputreturnsilly.html">here</a>):</p>
+<iframe src="../../applets/reduxmiddleware/experiments/outputreturnsilly.html" height="150px" width="100%"></iframe>
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
