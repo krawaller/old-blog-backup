@@ -10,7 +10,7 @@ draft: true
 
 ### The premise
 
-This blog post is made up by a series of tiny experiments aiming to **better our understanding of Redux middlewares**. You are assumed to be familiar with the basic functionality of Redux.
+This blog post is made up by a series of tiny self-contained experiments aiming to **better our understanding of Redux middlewares**. You are assumed to be familiar with the basic functionality of Redux.
 
 Throughout we'll use a ridiculously simple counter reducer. It knows only of a single action, `INCREMENT`, and when that is encountered it increases state with the `by` payload (thus the state is not an object but a simple number):
 
@@ -44,7 +44,7 @@ document.addEventListener('click', function(e){
 });
 ```
 
-Try it out in the iframe below (or stand-alone [here](../../applets/reduxmiddleware/experiments/nomiddleware.html))
+Try it out in the iframe below (or standalone [here](../../applets/reduxmiddleware/experiments/nomiddleware.html))
 
 <iframe src="../../applets/reduxmiddleware/experiments/nomiddleware.html" height="100px" width="100%"></iframe>
 
@@ -210,7 +210,8 @@ var vanilladispatch = Redux.createStore(reducer).dispatch;
 var snoopForVanilla = function(middlewareAPI){
     return function(next){
         return function(action){
-            output("next === vanilla dispatch? "+(next.toString() === vanilladispatch.toString()));
+            var comparison = (next.toString() === vanilladispatch.toString());
+            output("next === vanilla dispatch? "+comparison);
             return next(action);
         }
     }
@@ -263,9 +264,9 @@ var middlewares = Redux.applyMiddleware(snooper,noop),
 
 <iframe src="../../applets/reduxmiddleware/experiments/snoopatfriend.html" height="150px" width="100%"></iframe>
 
-It seems inner part of the middleware becomes the `next`. Which makes sense as the inner part is what takes the action as an argument, and it is the action we're feeding to `next`!
+Evidently the inner part of the middleware becomes the `next`. Which makes sense as the inner part is what takes the action as an argument, and it is the action we're feeding to `next`!
 
-Curious what would happen if we put snooper last in the chain? You'd get a facefull of [Redux source code](https://github.com/reactjs/redux/blob/e7295c33776be6199b826817934dadad5d0f9bb1/src/createStore.js#L148-L180) is what. Hack the standalone version and try it!
+Curious what would happen if we put snooper last in the chain? You'd get a facefull of [Redux source code](https://github.com/reactjs/redux/blob/e7295c33776be6199b826817934dadad5d0f9bb1/src/createStore.js#L148-L180) is what, spelling out the entrails of the `dispatch` method. Hack the standalone version and try it!
 
 ### Dispatch return value
 
@@ -303,7 +304,7 @@ var sillynoop = function(middlewareAPI){
 
 ...then bogus crap is what comes out at the end of the chain, even if we put a regular noop before and after:
 
-```
+```javascript
 // setting up the store
 var middlewares = Redux.applyMiddleware(noop,sillynoop,noop),
     store = Redux.createStore(reducer,middlewares);
@@ -313,3 +314,242 @@ var middlewares = Redux.applyMiddleware(noop,sillynoop,noop),
 See for yourself (standalone [here](../../applets/reduxmiddleware/experiments/outputreturnsilly.html)):
 
 <iframe src="../../applets/reduxmiddleware/experiments/outputreturnsilly.html" height="150px" width="100%"></iframe>
+
+
+### Localstorage getsate
+
+We've utlized `middlewareAPI.getState` in the `logger` middleware. Here's another quick example of a more practical use; a `persist` middleware which uses `middlewareAPI.getState` to store the whole store state to `localStorage` for every change.
+
+```javascript
+var persist = function(middlewareAPI){
+    return function(next){
+        return function function(action){
+            var ret = next(action),
+                str = JSON.stringify({data:middlewareAPI.getState()});
+            window.localStorage.setItem("SAVESTATE",str);
+            return ret;
+        }
+    }
+}
+```
+
+We put this in a store, and seed it with data from localStorage as initial state:
+
+```javascript
+var savedstr = window.localStorage.getItem("SAVESTATE")||"{}",
+    initialstate = JSON.parse(savedstr).data,
+    middlewares = Redux.applyMiddleware(persist),
+    store = Redux.createStore(reducer,initialstate,middlewares);
+```
+
+Give it a few clicks below, then reload the page to watch the counter remember its position (and not at *all* to give me extra page views).
+
+<iframe src="../../applets/reduxmiddleware/experiments/persistence.html" height="100px" width="100%"></iframe>
+
+Standalone [here](../../applets/reduxmiddleware/experiments/persistence.html).
+
+
+### The injected `dispatch`
+
+We've utlized `middlewareAPI.getState` in the `logger` middleware. The use of it is pretty obvious. But what about the other method on the `middlewareAPI`, namely `dispatch`? At first glance it doesn't really make sense. To continue the action chain we merely call `next`, as we've seen several times over. Why would we want to start a new chain?
+
+Just to test that this is really what will happen (because who knows, maybe `middlewareAPI.dispatch` is a wormhole to the final `dispatch` in the chain?), let's make a silly `echo` middleware:
+
+```javascript
+var echo = function(middlewareAPI){
+    return function(next){
+        return function(action){
+            if (action.type !== 'ECHO'){
+                setTimeout(function(){
+                    middlewareAPI.dispatch({
+                        type: 'ECHO',
+                        volume: 3
+                    });
+                },500);
+                return next(action);
+            } else if (action.volume){
+                setTimeout(function(){
+                    middlewareAPI.dispatch({
+                        type: 'ECHO',
+                        volume: action.volume - 1
+                    });
+                },500);
+            }
+        }
+    }
+}
+```
+
+If the action it is given isn't an `ECHO`, it will start a new chain with an `ECHO` action with `volume` 3. If it was an echo it will repeat it with one less volume unit, until the echo fades. Note that we're swallowing all `ECHO` actions, not passing them along to `next`.
+
+In order to see this in action let's also revive our `loggerFactory`, although slightly less spammy this time:
+
+```javascript
+var loggerFactory = function(name){
+    return function(middlewareAPI){
+        return function(next){
+            return function(action){
+                var ret = next(action),
+                    newstate = middlewareAPI.getState();
+                output(name+": called with "+JSON.stringify(action)+", state now "+newstate);
+                return ret;
+            }
+        }
+    }
+}
+```
+
+We set up a store with the `echo` middleware sandwiched between two `logger`s:
+
+```javascript
+var log1 = loggerFactory("log1"),
+    log2 = loggerFactory("log2"),
+    middlewares = Redux.applyMiddleware(log1,echo,log2),
+    store = Redux.createStore(reducer,middlewares);
+```
+
+Try it out (standalone [here](../../applets/reduxmiddleware/experiments/testingdispatch.html))!
+
+<iframe src="../../applets/reduxmiddleware/experiments/testingdispatch.html" height="400px" width="100%"></iframe>
+
+
+### Redux-thunk
+
+So the previous experiment merely proved that `middlewareAPI.dispatch` is a way to start a new chain, something which on the surface seems pretty useless. Here's a very good example for when it *is* useful: [Redux-thunk](https://github.com/gaearon/redux-thunk). It is a middleware where the source code looks like this:
+
+```javascript
+var thunk = function(middlewareAPI){
+    return function(next){
+        return function(action){
+            if (typeof action === 'function'){
+                return action(middlewareAPI.dispatch,middlewareAPI.getState);
+            } else {
+                return next(action);
+            }
+        }
+    }
+}
+```
+
+So what's going on here? It checks if `action` is a function (what?!), and if so it invokes that function with `dispatch` and `getState` from the `middlewareAPI`. If `action` is not a function, it simply passes it on to `next` as per usual.
+
+The point of this is to enable developers to have action creators that are async. Let's take a look again at how the counter click handler is set in our experiments:
+
+```
+document.addEventListener('click', function(e){
+    store.dispatch({ type: 'INCREMENT', by: 1 });
+});
+```
+
+In normal Redux usage, like for example in a React app using the [React-Redux](https://github.com/reactjs/react-redux) bridge, you won't pass around a reference to the store itself. Instead you'll pass around action creators, and have some central system feed whatever they return to `store.dispatch`. Translating our code above, that might look something like this:
+
+```
+// these action creators are what "views" in your app will use
+var actionCreators = {
+    increase: function(inc){
+         // we return an action that'll go to the `dispatch` chain
+        return {type: 'INCREMENT', by: inc};
+    }
+}
+
+// The views will use the actionCreators through a bridge to the dispatch method:
+var bridge = function(dispatch){
+    return {
+        increase: function(inc){ dispatch(actions.increase(inc)); }
+    }
+};
+```
+
+The point of the bridge is that we don't pass the store or `dispatch` around, we just provide it at hookup time by passing it to the bridge function.
+
+This model as seen so far doesn't really allow for defining async actions in a smooth way. Sure, we could do some async stuff in our `bridge` function above, but ideally we'd like to have that logic in the `actionCreators` definition. This is what `Redux-thunk` allows us to do. Remember how it checked if an action was a function, and if so invoked that? That allows us to do stuff like this (this is an extract from our [Redux Firebase example](a-react-redux-firebase-app-with-authentication/)): 
+
+
+```javascript
+var actionCreators = {
+    startQuoteEdit: function(qid){
+        return {type:C.START_QUOTE_EDIT,qid};
+    },
+    cancelQuoteEdit: function(qid){
+        return {type:C.FINISH_QUOTE_EDIT,qid};
+    },
+    deleteQuote: function(qid){
+        return function(dispatch,getState){
+            dispatch({type:C.SUBMIT_QUOTE_EDIT,qid});
+            quotesRef.child(qid).remove(function(error){
+                dispatch({type:C.FINISH_QUOTE_EDIT,qid});
+                if (error){
+                    dispatch({type:C.DISPLAY_ERROR,error:"Deletion failed! "+error});
+                } else {
+                    dispatch({type:C.DISPLAY_MESSAGE,message:"Quote successfully deleted!"});
+                }
+            });
+        };
+    },
+    // ...
+}
+```
+
+As you can see, `startQuoteEdit` and `cancelQuoteEdit` are normal sync actions using regular plain action objects, while `deleteQuote` contains lots of logic doing both sync and async stuff. 
+
+When a `deleteQuote` action (which is a function) enters the `dispatch` chain, the `thunk` middleware will catch it, run it, and the result with be further calls to `dispatch` with (most often) regular action objects.
+
+As you can imagine it is important to put `thunk` at the beginning of the middleware chain, since no other middleware will be expecting actions which are functions!
+
+To further wrap our brains around this, let's make a contrived experiment of our own using `thunk`. Let's pretend-play that we're a real app and define our action like this:
+
+```
+var actionCreators = {
+    increase: function(inc){
+        return function(dispatch,getState){
+            dispatch({type: 'INCREMENTINCOMING'});
+            setTimeout(function(){
+                dispatch({type: 'INCREMENT', by:inc});
+            },1000);
+        }
+    }
+}
+```
+
+We'll change the click hookup to look like this (although a "real" app would use a bridge of some kind and not a direct store reference):
+
+```
+document.addEventListener('click', function(e){
+    store.dispatch( actionCreators.increase(1) );
+});
+```
+
+To see this in action we also make use of a simple `logger`:
+
+```
+var logger = function(middlewareAPI){
+    return function(next){
+        return function(action){
+            var ret = next(action),
+                newstate = middlewareAPI.getState();
+            output("action "+JSON.stringify(action)+", state now "+newstate);
+            return ret;
+        }
+    }
+}
+```
+
+We take care to put that *after* `thunk` in the middleware chain:
+
+```
+var middlewares = Redux.applyMiddleware(thunk,logger),
+    store = Redux.createStore(reducer,middlewares);
+```
+
+Check it out (standalone [here](../../applets/reduxmiddleware/experiments/thunk.html))!
+
+<iframe src="../../applets/reduxmiddleware/experiments/thunk.html" height="150px" width="100%"></iframe>
+
+wee!
+
+
+
+
+
+
+

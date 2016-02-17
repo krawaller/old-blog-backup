@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<em>snooping at final `next`</em>
+<em>snooping at `middlewareAPI.dispatch`</em>
 
 <div id="app"></div>
 <div id="log"></div>
@@ -37,21 +37,48 @@ var output = function(txt){
     document.getElementById("log").appendChild(newparagraph);
 }
 
-// middleware which tests if `next` is vanilla dispatch
-var vanilladispatch = Redux.createStore(reducer).dispatch;
-var snoopForVanilla = function(middlewareAPI){
-    return function(next){
-        return function(action){
-            var comparison = (next.toString() === vanilladispatch.toString());
-            output("next === vanilla dispatch? "+comparison);
-            return next(action);
+// a less spammy log factory
+var loggerFactory = function(name){
+    return function(middlewareAPI){
+        return function(next){
+            return function(action){
+                var ret = next(action),
+                    newstate = middlewareAPI.getState();
+                output(name+": called with "+JSON.stringify(action)+", state now "+newstate);
+                return ret;
+            }
         }
     }
 }
 
+// an echoer 
+var echo = function(middlewareAPI){
+    return function(next){
+        return function(action){
+            if (action.type !== 'ECHO'){
+                setTimeout(function(){
+                    middlewareAPI.dispatch({
+                        type: 'ECHO',
+                        volume: 3
+                    });
+                },500);
+                return next(action);
+            } else if (action.volume){
+                setTimeout(function(){
+                    middlewareAPI.dispatch({
+                        type: 'ECHO',
+                        volume: action.volume - 1
+                    });
+                },500);
+            }
+        }
+    }
+}
 
-// create a store with vanilla dispatch snooper
-var middlewares = Redux.applyMiddleware(snoopForVanilla),
+// setting up the echoing
+var log1 = loggerFactory("log1"),
+    log2 = loggerFactory("log2"),
+    middlewares = Redux.applyMiddleware(log1,echo,log2),
     store = Redux.createStore(reducer,middlewares);
 
 // make render run on every change to store, and run an initial render

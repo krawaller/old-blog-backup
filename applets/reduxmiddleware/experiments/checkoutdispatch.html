@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<em>snooping at final `next`</em>
+<em>snooping at `middlewareAPI.dispatch`</em>
 
 <div id="app"></div>
 <div id="log"></div>
@@ -37,21 +37,24 @@ var output = function(txt){
     document.getElementById("log").appendChild(newparagraph);
 }
 
-// middleware which tests if `next` is vanilla dispatch
-var vanilladispatch = Redux.createStore(reducer).dispatch;
-var snoopForVanilla = function(middlewareAPI){
+// a snooper middleware who logs out `middlewareAPI.dispatch`
+var snooper = function(middlewareAPI){
     return function(next){
         return function(action){
-            var comparison = (next.toString() === vanilladispatch.toString());
-            output("next === vanilla dispatch? "+comparison);
+            var given = (middlewareAPI.dispatch+"").replace(/\s+/g,' '),
+                vanilla = (Redux.createStore(reducer).dispatch+"").replace(/\s+/g,' '),
+                middlewared = (store.dispatch+"").replace(/\s+/g,' ');
+
+            output("vanilla? "+(given === vanilla));
+            output("middlewared? "+(given === middlewared));
+            output("looks like: "+given);
             return next(action);
         }
     }
 }
 
-
-// create a store with vanilla dispatch snooper
-var middlewares = Redux.applyMiddleware(snoopForVanilla),
+// setting up the snooping
+var middlewares = Redux.applyMiddleware(snooper),
     store = Redux.createStore(reducer,middlewares);
 
 // make render run on every change to store, and run an initial render

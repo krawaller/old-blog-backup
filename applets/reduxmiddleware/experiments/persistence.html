@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<em>snooping at final `next`</em>
+<em>a counter with persistence</em>
 
 <div id="app"></div>
 <div id="log"></div>
@@ -37,22 +37,23 @@ var output = function(txt){
     document.getElementById("log").appendChild(newparagraph);
 }
 
-// middleware which tests if `next` is vanilla dispatch
-var vanilladispatch = Redux.createStore(reducer).dispatch;
-var snoopForVanilla = function(middlewareAPI){
+// middleware logging 
+var persist = function(middlewareAPI){
     return function(next){
         return function(action){
-            var comparison = (next.toString() === vanilladispatch.toString());
-            output("next === vanilla dispatch? "+comparison);
-            return next(action);
+            var ret = next(action),
+                str = JSON.stringify({data:middlewareAPI.getState()});
+            window.localStorage.setItem("SAVESTATE",str);
+            return ret;
         }
     }
 }
 
-
-// create a store with vanilla dispatch snooper
-var middlewares = Redux.applyMiddleware(snoopForVanilla),
-    store = Redux.createStore(reducer,middlewares);
+// setting up the store with persistence
+var savedstr = window.localStorage.getItem("SAVESTATE")||"{}",
+    initialstate = JSON.parse(savedstr).data,
+    middlewares = Redux.applyMiddleware(persist),
+    store = Redux.createStore(reducer,initialstate,middlewares);
 
 // make render run on every change to store, and run an initial render
 store.subscribe(render);
@@ -62,7 +63,6 @@ render();
 document.addEventListener('click', function(e){
     store.dispatch({ type: 'INCREMENT', by: 1 });
 });
-
 
 </script>
 </body>
