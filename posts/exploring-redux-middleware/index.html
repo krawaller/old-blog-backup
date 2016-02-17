@@ -47,7 +47,7 @@
 <div class="sub-head">
   <div class="container">
   	
-A series of simple stand-alone experiments to understand Redux Middleware
+Nine simple stand-alone experiments to understand Redux Middlewares
   	
   </div>
 </div><!-- END .sub-head -->
@@ -62,7 +62,7 @@ A series of simple stand-alone experiments to understand Redux Middleware
   <h2 class="post-title">
     <a href="../../posts/exploring-redux-middleware">Exploring Redux middleware</a>
     <span class="post-meta">
-      <time datetime="Mon Feb 15 2016 01:00:00 GMT+0100 (CET)">Feb 15th 2016</time> 
+      <time datetime="Wed Feb 17 2016 01:00:00 GMT+0100 (CET)">Feb 17th 2016</time> 
     </span>
   </h2>
     <div class='tags'>
@@ -77,28 +77,32 @@ A series of simple stand-alone experiments to understand Redux Middleware
 </header>
 
   <section class='post-content'>
-  <h3 id="the-premise">The premise</h3>
-<p>This blog post is made up by a series of tiny self-contained experiments aiming to <strong>better our understanding of Redux middlewares</strong>. You are assumed to be familiar with the basic functionality of Redux.</p>
-<p>Throughout we&#39;ll use a ridiculously simple counter reducer. It knows only of a single action, <code>INCREMENT</code>, and when that is encountered it increases state with the <code>by</code> payload (thus the state is not an object but a simple number):</p>
+  <h3 id="0-the-premise">0. The premise</h3>
+<p>This blog post is made up by 9 tiny self-contained experiments aiming to <strong>better our understanding of Redux middlewares</strong>. You are assumed to be familiar with the basic functionality of Redux. If you&#39;re not then <a href="http://redux.js.org/">go remedy that immediately</a>, and let it be known that I&#39;m severely jealous of you for still having that experience in front of you!</p>
+<p>Throughout we&#39;ll use a ridiculously simple <strong>counter reducer</strong>. It knows only of a single action, <code>INCREMENT</code>, and when that is encountered it increases state with the <code>by</code> payload (thus the state is not an object but a simple number):</p>
 <pre><code><span class="keyword">var</span> reducer = <span class="function"><span class="keyword">function</span><span class="params">(state,action)</span>{</span>
-    state = state || <span class="number">0</span>;
     <span class="keyword">switch</span>(action.type){
-        <span class="keyword">case</span> <span class="string">'INCREMENT'</span>: <span class="keyword">return</span> state + (action.by || <span class="number">1</span>);
+        <span class="keyword">case</span> <span class="string">'INCREMENT'</span>: <span class="keyword">return</span> (state || <span class="number">0</span>) + (action.by || <span class="number">1</span>);
         <span class="keyword">default</span>: <span class="keyword">return</span> state;
     }
 }</code></pre>
 
-<p>Just to try this out we can create a store with no middlewares...</p>
+<p>Just to try this out we can create a store with no middlewares:</p>
 <pre><code><span class="keyword">var</span> store = Redux.createStore(reducer);</code></pre>
 
-<p>...and, assuming an html document with Redux and a <code>div</code> with id <code>app</code>, we can hook this up like this:</p>
-<pre><code><span class="comment">// make render run on every change to store, and run an initial render</span>
-store.subscribe(render);
-render();
+<p>Assuming a <code>div</code> with id <code>app</code> we whip up a render function:</p>
+<pre><code><span class="keyword">var</span> render = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="keyword">var</span> newhtml = <span class="string">"&lt;h2&gt;Clicked "</span>+store.getState()+<span class="string">" times.&lt;/h2&gt;"</span>;
+    document.getElementById(<span class="string">"app"</span>).innerHTML = newhtml;
+}</code></pre>
 
-<span class="comment">// increase counter anytime page is clicked</span>
-document.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">(e)</span>{</span>
-    store.dispatch({ type: <span class="string">'INCREMENT'</span>, by: <span class="number">1</span> });
+<p>We hook <code>render</code> up to run when the store updates, and we also run an initial render:</p>
+<pre><code>store.subscribe(render);
+render();</code></pre>
+
+<p>Finally we set a click event which dispatches an action to the store:</p>
+<pre><code>document.addEventListener(<span class="string">'click'</span>, <span class="function"><span class="keyword">function</span><span class="params">(e)</span></span>{
+    store.dispatch({ <span class="built_in">type</span>: <span class="string">'INCREMENT'</span>, by: <span class="number">1</span> });
 });</code></pre>
 
 <p>Try it out in the iframe below (or standalone <a href="../../applets/reduxmiddleware/experiments/nomiddleware.html">here</a>)</p>
@@ -106,8 +110,8 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 
 <p>The following experiments will all be slight variations of this little app. Each will have a standalone link to an html document containing the full code, apart from Redux itself. There will be no other dependencies at all.</p>
 <p>I&#39;ll also be avoiding ES6 syntax to make it more clear what&#39;s going on, as arrow functions and implicit returns tend to muddy the waters a bit.</p>
-<h3 id="the-simplest-possible-middleware">The simplest possible middleware</h3>
-<p>A middleware sits on top <code>store.dispatch</code>. Each applied middleware is given a dispatched action object, doing their thing before passing it on to the next middleware in line, until it finally reaches the original <code>store.dispatch</code> which will call the reducer.</p>
+<h3 id="1-the-simplest-possible-middleware">1. The simplest possible middleware</h3>
+<p>A middleware sits on top <code>store.dispatch</code>. Each middleware is given a dispatched action object, doing their thing before passing it on to the next middleware in line, until it finally reaches the original <code>store.dispatch</code> which will call the reducer.</p>
 <p>To get a sense for what the middleware looks like, check out this simplest possible middleware which does nothing but pass the action along:</p>
 <pre><code><span class="keyword">var</span> noop = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
     <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
@@ -126,7 +130,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <iframe src="../../applets/reduxmiddleware/experiments/noop.html" height="100px" width="100%"></iframe>
 
 <p>Things appear to still be working as they should.</p>
-<h3 id="a-breadcrumb-trail">A breadcrumb trail</h3>
+<h3 id="2-a-breadcrumb-trail">2. A breadcrumb trail</h3>
 <p>In order to decipher what&#39;s going on, let&#39;s add a logging mechanism to our app! We add a <code>&lt;div id=&quot;log&quot;/&gt;</code> to the page, and write to it using this <code>output</code> function:</p>
 <pre><code><span class="comment">// put stuff into the log</span>
 <span class="keyword">var</span> output = <span class="function"><span class="keyword">function</span><span class="params">(txt)</span>{</span>
@@ -173,7 +177,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
     }
 }</code></pre>
 
-<h3 id="having-some-fun">Having some fun</h3>
+<h3 id="3-having-some-fun">3. Having some fun</h3>
 <p>Just to internalize our findings so far, let&#39;s make some silly middlewares that messes about with the <code>next</code> call! First we have a <code>deaf</code> middleware which will only hear what you say a third of the time:</p>
 <pre><code><span class="keyword">var</span> deaf = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
     <span class="keyword">var</span> i = <span class="number">0</span>;
@@ -214,7 +218,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <iframe src="../../applets/reduxmiddleware/experiments/havingsomefun.html" height="100px" width="100%"></iframe>
 
 
-<h3 id="snooping-at-final-next-">Snooping at final <code>next</code></h3>
+<h3 id="4-snooping-at-final-next-">4. Snooping at final <code>next</code></h3>
 <p>Since the action eventually ends up with the regular <code>store.dispatch</code>, that implies that <code>next</code> inside the final middleware <strong>is</strong> the vanilla <code>store.dispatch</code>. Let&#39;s see if that holds true! We make a middleware that makes the comparison: </p>
 <pre><code><span class="keyword">var</span> vanilladispatch = Redux.createStore(reducer).dispatch;
 <span class="keyword">var</span> snoopForVanilla = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
@@ -232,7 +236,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <iframe src="../../applets/reduxmiddleware/experiments/snoopvanillanaive.html" height="120px" width="100%"></iframe>
 
 <p>It seems our assumption was correct!</p>
-<h3 id="snooping-at-following-middleware">Snooping at following middleware</h3>
+<h3 id="5-snooping-at-following-middleware">5. Snooping at following middleware</h3>
 <p>This raises a question - what is <code>next</code> from the perspective of a middleware who <strong>isn&#39;t</strong> last in the chain? Let&#39;s revive or old friend the <code>noop</code> middleware:</p>
 <pre><code><span class="keyword">var</span> noop = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
     <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
@@ -261,7 +265,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 
 <p>Evidently the inner part of the middleware becomes the <code>next</code>. Which makes sense as the inner part is what takes the action as an argument, and it is the action we&#39;re feeding to <code>next</code>!</p>
 <p>Curious what would happen if we put snooper last in the chain? You&#39;d get a facefull of <a href="https://github.com/reactjs/redux/blob/e7295c33776be6199b826817934dadad5d0f9bb1/src/createStore.js#L148-L180">Redux source code</a> is what, spelling out the entrails of the <code>dispatch</code> method. Hack the standalone version and try it!</p>
-<h3 id="dispatch-return-value">Dispatch return value</h3>
+<h3 id="6-dispatch-return-value">6. Dispatch return value</h3>
 <p>Ok, so the middleware passes the action along by calling the <code>next</code> it is given. But why does it return the result of that <code>next</code> call? Since the action chain is done through the <code>next</code> call, what purpose does that return value serve? </p>
 <p>A clue might be that the <a href="http://redux.js.org/docs/api/Store.html#dispatch">documentation says</a> that <code>store.dispatch(action)</code> returns the action you passed in. The docs also notes, however, that middlewares can mess with the return value.</p>
 <p>First off, let&#39;s just hack the click handler to also output the return from <code>dispatch</code> to the log:</p>
@@ -294,7 +298,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <iframe src="../../applets/reduxmiddleware/experiments/outputreturnsilly.html" height="150px" width="100%"></iframe>
 
 
-<h3 id="localstorage-getsate">Localstorage getsate</h3>
+<h3 id="7-localstorage-getsate">7. Localstorage getsate</h3>
 <p>We&#39;ve utlized <code>middlewareAPI.getState</code> in the <code>logger</code> middleware. Here&#39;s another quick example of a more practical use; a <code>persist</code> middleware which uses <code>middlewareAPI.getState</code> to store the whole store state to <code>localStorage</code> for every change.</p>
 <pre><code><span class="keyword">var</span> persist = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
     <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
@@ -317,7 +321,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <iframe src="../../applets/reduxmiddleware/experiments/persistence.html" height="100px" width="100%"></iframe>
 
 <p>Standalone <a href="../../applets/reduxmiddleware/experiments/persistence.html">here</a>.</p>
-<h3 id="the-injected-dispatch-">The injected <code>dispatch</code></h3>
+<h3 id="8-the-injected-dispatch-">8. The injected <code>dispatch</code></h3>
 <p>We&#39;ve utlized <code>middlewareAPI.getState</code> in the <code>logger</code> middleware. The use of it is pretty obvious. But what about the other method on the <code>middlewareAPI</code>, namely <code>dispatch</code>? At first glance it doesn&#39;t really make sense. To continue the action chain we merely call <code>next</code>, as we&#39;ve seen several times over. Why would we want to start a new chain?</p>
 <p>Just to test that this is really what will happen (because who knows, maybe <code>middlewareAPI.dispatch</code> is a wormhole to the final <code>dispatch</code> in the chain?), let&#39;s make a silly <code>echo</code> middleware:</p>
 <pre><code><span class="keyword">var</span> echo = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
@@ -368,7 +372,7 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <iframe src="../../applets/reduxmiddleware/experiments/testingdispatch.html" height="400px" width="100%"></iframe>
 
 
-<h3 id="redux-thunk">Redux-thunk</h3>
+<h3 id="9-redux-thunk">9. Redux-thunk</h3>
 <p>So the previous experiment merely proved that <code>middlewareAPI.dispatch</code> is a way to start a new chain, something which on the surface seems pretty useless. Here&#39;s a very good example for when it <em>is</em> useful: <a href="https://github.com/gaearon/redux-thunk">Redux-thunk</a>. It is a middleware where the source code looks like this:</p>
 <pre><code><span class="keyword">var</span> thunk = <span class="function"><span class="keyword">function</span><span class="params">(middlewareAPI)</span>{</span>
     <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(next)</span>{</span>
@@ -468,7 +472,9 @@ document.addEventListener(<span class="string">'click'</span>, <span class="func
 <p>Check it out (standalone <a href="../../applets/reduxmiddleware/experiments/thunk.html">here</a>)!</p>
 <iframe src="../../applets/reduxmiddleware/experiments/thunk.html" height="150px" width="100%"></iframe>
 
-<p>wee!</p>
+<p>This use was rather contrived, but again, remember - the point of thunks as actions is merely to allow us to write asynchronous action creators without being dependent on a reference to the store.</p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>I hope this little series of laboratory concoction was useful. Mind you, a good way to understand Redux is to read the source - it is tiny! In fact the full version with warnings and comments just has an ever so slightly larger character count than this blog post...</p>
 
   </section>
 

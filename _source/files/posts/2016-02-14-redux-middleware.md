@@ -1,44 +1,52 @@
 ---
 type: post
 title: "Exploring Redux middleware"
-date: 2016-02-15
+date: 2016-02-17
 tags: [redux]
 author: David
-excerpt: A series of simple stand-alone experiments to understand Redux Middleware
-draft: true
+excerpt: Nine simple stand-alone experiments to understand Redux Middlewares
 ---
 
-### The premise
+### 0. The premise
 
-This blog post is made up by a series of tiny self-contained experiments aiming to **better our understanding of Redux middlewares**. You are assumed to be familiar with the basic functionality of Redux.
+This blog post is made up by 9 tiny self-contained experiments aiming to **better our understanding of Redux middlewares**. You are assumed to be familiar with the basic functionality of Redux. If you're not then [go remedy that immediately](http://redux.js.org/), and let it be known that I'm severely jealous of you for still having that experience in front of you!
 
-Throughout we'll use a ridiculously simple counter reducer. It knows only of a single action, `INCREMENT`, and when that is encountered it increases state with the `by` payload (thus the state is not an object but a simple number):
+Throughout we'll use a ridiculously simple **counter reducer**. It knows only of a single action, `INCREMENT`, and when that is encountered it increases state with the `by` payload (thus the state is not an object but a simple number):
 
 ```javascript
 var reducer = function(state,action){
-    state = state || 0;
     switch(action.type){
-        case 'INCREMENT': return state + (action.by || 1);
+        case 'INCREMENT': return (state || 0) + (action.by || 1);
         default: return state;
     }
 }
 ```
 
-Just to try this out we can create a store with no middlewares...
+Just to try this out we can create a store with no middlewares:
 
 ```javascript
 var store = Redux.createStore(reducer);
 ```
 
-...and, assuming an html document with Redux and a `div` with id `app`, we can hook this up like this:
-
+Assuming a `div` with id `app` we whip up a render function:
 
 ```javascript
-// make render run on every change to store, and run an initial render
+var render = function(){
+    var newhtml = "<h2>Clicked "+store.getState()+" times.</h2>";
+    document.getElementById("app").innerHTML = newhtml;
+}
+```
+
+We hook `render` up to run when the store updates, and we also run an initial render:
+
+```javascript
 store.subscribe(render);
 render();
+```
 
-// increase counter anytime page is clicked
+Finally we set a click event which dispatches an action to the store:
+
+```
 document.addEventListener('click', function(e){
     store.dispatch({ type: 'INCREMENT', by: 1 });
 });
@@ -52,9 +60,9 @@ The following experiments will all be slight variations of this little app. Each
 
 I'll also be avoiding ES6 syntax to make it more clear what's going on, as arrow functions and implicit returns tend to muddy the waters a bit.
 
-### The simplest possible middleware
+### 1. The simplest possible middleware
 
-A middleware sits on top `store.dispatch`. Each applied middleware is given a dispatched action object, doing their thing before passing it on to the next middleware in line, until it finally reaches the original `store.dispatch` which will call the reducer.
+A middleware sits on top `store.dispatch`. Each middleware is given a dispatched action object, doing their thing before passing it on to the next middleware in line, until it finally reaches the original `store.dispatch` which will call the reducer.
 
 To get a sense for what the middleware looks like, check out this simplest possible middleware which does nothing but pass the action along:
 
@@ -84,7 +92,7 @@ var store = Redux.createStore(reducer,middlewares);
 Things appear to still be working as they should.
 
 
-### A breadcrumb trail
+### 2. A breadcrumb trail
 
 In order to decipher what's going on, let's add a logging mechanism to our app! We add a `<div id="log"/>` to the page, and write to it using this `output` function:
 
@@ -146,7 +154,7 @@ function(middlewareAPI){ // called at start, left to right
 }
 ```
 
-### Having some fun
+### 3. Having some fun
 
 Just to internalize our findings so far, let's make some silly middlewares that messes about with the `next` call! First we have a `deaf` middleware which will only hear what you say a third of the time:
 
@@ -201,7 +209,7 @@ The net result should be that only every third click registers, but that click w
 <iframe src="../../applets/reduxmiddleware/experiments/havingsomefun.html" height="100px" width="100%"></iframe>
 
 
-### Snooping at final `next`
+### 4. Snooping at final `next`
 
 Since the action eventually ends up with the regular `store.dispatch`, that implies that `next` inside the final middleware **is** the vanilla `store.dispatch`. Let's see if that holds true! We make a middleware that makes the comparison: 
 
@@ -226,7 +234,7 @@ Now, let's put it to the test (standalone [here](../../applets/reduxmiddleware/e
 
 It seems our assumption was correct!
 
-### Snooping at following middleware
+### 5. Snooping at following middleware
 
 This raises a question - what is `next` from the perspective of a middleware who **isn't** last in the chain? Let's revive or old friend the `noop` middleware:
 
@@ -268,7 +276,7 @@ Evidently the inner part of the middleware becomes the `next`. Which makes sense
 
 Curious what would happen if we put snooper last in the chain? You'd get a facefull of [Redux source code](https://github.com/reactjs/redux/blob/e7295c33776be6199b826817934dadad5d0f9bb1/src/createStore.js#L148-L180) is what, spelling out the entrails of the `dispatch` method. Hack the standalone version and try it!
 
-### Dispatch return value
+### 6. Dispatch return value
 
 Ok, so the middleware passes the action along by calling the `next` it is given. But why does it return the result of that `next` call? Since the action chain is done through the `next` call, what purpose does that return value serve? 
 
@@ -316,7 +324,7 @@ See for yourself (standalone [here](../../applets/reduxmiddleware/experiments/ou
 <iframe src="../../applets/reduxmiddleware/experiments/outputreturnsilly.html" height="150px" width="100%"></iframe>
 
 
-### Localstorage getsate
+### 7. Localstorage getsate
 
 We've utlized `middlewareAPI.getState` in the `logger` middleware. Here's another quick example of a more practical use; a `persist` middleware which uses `middlewareAPI.getState` to store the whole store state to `localStorage` for every change.
 
@@ -349,7 +357,7 @@ Give it a few clicks below, then reload the page to watch the counter remember i
 Standalone [here](../../applets/reduxmiddleware/experiments/persistence.html).
 
 
-### The injected `dispatch`
+### 8. The injected `dispatch`
 
 We've utlized `middlewareAPI.getState` in the `logger` middleware. The use of it is pretty obvious. But what about the other method on the `middlewareAPI`, namely `dispatch`? At first glance it doesn't really make sense. To continue the action chain we merely call `next`, as we've seen several times over. Why would we want to start a new chain?
 
@@ -413,7 +421,7 @@ Try it out (standalone [here](../../applets/reduxmiddleware/experiments/testingd
 <iframe src="../../applets/reduxmiddleware/experiments/testingdispatch.html" height="400px" width="100%"></iframe>
 
 
-### Redux-thunk
+### 9. Redux-thunk
 
 So the previous experiment merely proved that `middlewareAPI.dispatch` is a way to start a new chain, something which on the surface seems pretty useless. Here's a very good example for when it *is* useful: [Redux-thunk](https://github.com/gaearon/redux-thunk). It is a middleware where the source code looks like this:
 
@@ -545,11 +553,9 @@ Check it out (standalone [here](../../applets/reduxmiddleware/experiments/thunk.
 
 <iframe src="../../applets/reduxmiddleware/experiments/thunk.html" height="150px" width="100%"></iframe>
 
-wee!
+This use was rather contrived, but again, remember - the point of thunks as actions is merely to allow us to write asynchronous action creators without being dependent on a reference to the store.
 
+### Wrapping up
 
-
-
-
-
-
+I hope this little series of laboratory concoction was useful. Mind you, a good way to understand Redux is to read the source - it is tiny! In fact the full version with warnings and comments just has an ever so slightly larger character count than this blog post...
+ 
