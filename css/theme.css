@@ -34,19 +34,17 @@ ul.social-nav {
   text-align: center;
   font-size: 0.9em; }
   ul.social-nav li.twitter:before {
-    content: url(http://i.imgur.com/GXcr9XG.png);
+    content: url(../img/twitter-small.png);
     padding: 0px 5px 0px 0px; }
   ul.social-nav li.github:before {
-    content: url(http://i.imgur.com/CwUcGbq.png);
-    padding: 0px 5px 0px 0px; }
-  ul.social-nav li.dribbble:before {
-    content: url(http://i.imgur.com/KWpUL7z.png);
+    content: url(../img/github-small.png);
     padding: 0px 5px 0px 0px; }
   ul.social-nav li.mail:before {
-    content: url(https://www.fingbox.com/images/register-mail.png);
-    padding: 0px 5px 0px 0px; }
+    content: url(../img/mailsmall.png);
+    padding: 0px 5px 0px 0px;
+    opacity: 0.5; } /* because david's silly img */
   ul.social-nav li.rss:before {
-    content: url(http://blog.krawaller.se/img/rss-small.png);
+    content: url(../img/rss-small.png);
     padding: 0px 5px 0px 0px; }
   ul.social-nav li {
     display: inline-block;

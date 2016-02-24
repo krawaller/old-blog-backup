@@ -79,7 +79,7 @@ Nine simple stand-alone experiments to understand Redux Middlewares
   <section class='post-content'>
   <h3 id="0-the-premise">0. The premise</h3>
 <p>This blog post is made up by 9 tiny self-contained experiments aiming to <strong>better our understanding of Redux middlewares</strong>. You are assumed to be familiar with the basic functionality of Redux. If you&#39;re not then <a href="http://redux.js.org/">go remedy that immediately</a>, and let it be known that I&#39;m severely jealous of you for still having that experience in front of you!</p>
-<p>Throughout we&#39;ll use a ridiculously simple <strong>counter reducer</strong>. It knows only of a single action, <code>INCREMENT</code>, and when that is encountered it increases state with the <code>by</code> payload (thus the state is not an object but a simple number):</p>
+<p>Throughout we&#39;ll use a ridiculously simple <strong>counter reducer</strong>, based off of Redux creator Dan Abramov&#39;s <a href="https://twitter.com/dan_abramov/status/664135757297295360">minimal Redux example</a>. It knows only of a single action, <code>INCREMENT</code>, and when that is encountered it increases state with the <code>by</code> payload (thus the state is not an object but a simple number):</p>
 <pre><code><span class="keyword">var</span> reducer = <span class="function"><span class="keyword">function</span><span class="params">(state,action)</span>{</span>
     <span class="keyword">switch</span>(action.type){
         <span class="keyword">case</span> <span class="string">'INCREMENT'</span>: <span class="keyword">return</span> (state || <span class="number">0</span>) + (action.by || <span class="number">1</span>);

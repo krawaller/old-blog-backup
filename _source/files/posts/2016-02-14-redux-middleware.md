@@ -11,7 +11,7 @@ excerpt: Nine simple stand-alone experiments to understand Redux Middlewares
 
 This blog post is made up by 9 tiny self-contained experiments aiming to **better our understanding of Redux middlewares**. You are assumed to be familiar with the basic functionality of Redux. If you're not then [go remedy that immediately](http://redux.js.org/), and let it be known that I'm severely jealous of you for still having that experience in front of you!
 
-Throughout we'll use a ridiculously simple **counter reducer**. It knows only of a single action, `INCREMENT`, and when that is encountered it increases state with the `by` payload (thus the state is not an object but a simple number):
+Throughout we'll use a ridiculously simple **counter reducer**, based off of Redux creator Dan Abramov's [minimal Redux example](https://twitter.com/dan_abramov/status/664135757297295360). It knows only of a single action, `INCREMENT`, and when that is encountered it increases state with the `by` payload (thus the state is not an object but a simple number):
 
 ```javascript
 var reducer = function(state,action){
