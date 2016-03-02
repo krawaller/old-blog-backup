@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Using D3.js with animations in React</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Detailing a solution to use D3.js code with animations in React
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/using-d3-js-with-animations-in-react">Using D3.js with animations in React</a>
+    <span class="post-meta">
+      <time datetime="Tue Mar 01 2016 01:00:00 GMT+0100 (CET)">Mar 1st 2016</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+        <span><a href='../../tags/d3/'>d3</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-problem">The problem</h3>
+<p>The other week I was tasked with putting some <a href="https://d3js.org/">D3</a> graphics into a React app. This is not a good fit - D3 works by mutating the DOM, which React wants ownership of. How to deal with that?</p>
+<p>It was easy to find examples of ready-made React D3 components, but they didn&#39;t sit right with me - all they tend to do was to put the D3 code in a thin React wrapper and pretend the problem doesn&#39;t exist. As long we don&#39;t do anything else in React space then things will kind of work, but don&#39;t try to put this into a regular SPA app lest you enjoy explosions.</p>
+<h3 id="the-solution">The solution</h3>
+<p>Then I read <a href="http://oli.me.uk/2015/09/09/d3-within-react-the-right-way/">Oliver Caldwell&#39;s post</a> on the matter. A heartily recommended read if you haven&#39;t already caught it!</p>
+<p>In the post he presents <a href="https://github.com/Olical/react-faux-dom">React-faux-dom</a>, a library that works like a light-weight <a href="https://github.com/tmpvar/jsdom">jsdom</a>. The faux nodes it creates have a <code>.toReact</code> method which turns them into virtual DOM.</p>
+<p>Oliver&#39;s idea in using this as a solution to the DOM ownership problem is rather clever:</p>
+<ol>
+<li><p>Create a faux element</p>
+<pre><code><span class="keyword">var</span> faux = react-faux-dom.createElement(<span class="string">"div"</span>);</code></pre>
+</li>
+<li><p>Feed that element to a library which works on a DOM node, such as d3.js</p>
+<pre><code><span class="keyword">var</span> svg = d3.select(faux).append(<span class="string">"svg"</span>)</code></pre>
+</li>
+<li><p>Work with the library as you normally would, mutating the fake node</p>
+<pre><code>svg.attr(<span class="string">"width"</span>, width + margin.left + margin.right)
+  .attr(<span class="string">"height"</span>, height + margin.top + margin.bottom)
+  .append(<span class="string">"g"</span>)
+  .attr(<span class="string">"transform"</span>, <span class="string">"translate("</span> + margin.left + <span class="string">","</span> + margin.top + <span class="string">")"</span>);
+  <span class="comment">// etc, normal d3.js code!</span></code></pre>
+</li>
+<li><p>Use the <code>.toReact</code> method to inject the fake node into virtual DOM output</p>
+<pre><code>var Chart = React.createClass({
+ render: <span class="keyword">function</span>(){
+   // <span class="keyword">...</span> D3 code trunkated <span class="keyword">...</span>
+   <span class="keyword">return</span> (&lt;div&gt;
+     &lt;h2&gt;Chart&lt;/h2&gt;
+       {fauxnode.toReact()}
+     &lt;/div&gt;)
+   }
+});</code></pre>
+
+</li>
+</ol>
+<p>This is a very powerful technique as it allows us to keep working with our existing node-mutating tools, while still being able to easily consume those in a React app.</p>
+<h3 id="the-solution-problem">The solution problem</h3>
+<p>However there&#39;s a big shortcoming to this approach - <strong>animations won&#39;t work!</strong> This is especially a shame with regards to D3 as animations in diagrams can be especially catching. </p>
+<p>For me not having animations wasn&#39;t an option, as the whole point of my task was to add some whizzbang to a demo. I had fallen in love with D3 creator <a href="https://bost.ocks.org/mike/">Mike Bostock&#39;s</a> beautiful <a href="https://bl.ocks.org/mbostock/3943967">Stacked-to-group Bar chart</a>, and now wanted to somehow make this work with Oliver&#39;s solution, while still being able to preserve as much as possible of Mike&#39;s code.</p>
+<h3 id="the-solution-problem-solution">The solution problem solution</h3>
+<p>First off - here&#39;s the final result! The chart in the iframe below (standalone <a href="../../applets/react-d3-anim/">here</a>) is rendered in React, the animations are done in JSX space, and only tiny tweaks to the D3 code was needed.</p>
+<iframe src="../../applets/react-d3-anim/" height="450px" width="100%"></iframe>
+
+<p>You can read the source code <a href="https://github.com/krawaller/d3animatedchartinreact/blob/gh-pages/index.js">here</a>, but here&#39;s a walkthrough of the general idea.</p>
+<p>I&#39;ve created a tiny <strong><code>createHook(component,fauxelement,statename)</code></strong> function which takes three arguments:</p>
+<ol>
+<li>A reference to the <strong>React component</strong> housing the d3 stuff</li>
+<li>The <strong>faux element</strong> created with <code>react-faux-dom</code> that we&#39;ll feed to d3</li>
+<li>Which <strong>state propname</strong> we want the resulting virtual DOM to end up in</li>
+</ol>
+<p>The function returns a hook which you&#39;re supposed to butt to the end of every d3 <code>.transition</code> definition like this:</p>
+<pre><code><span class="comment">// at the beginning of the d3 code, housed in `componentDidMount`</span>
+<span class="keyword">let</span> hook = createHook(<span class="keyword">this</span>,faux,<span class="string">"chart"</span>)
+
+<span class="comment">// further down:</span>
+rect.transition()
+    .duration(<span class="number">500</span>)
+    .delay(<span class="function"><span class="keyword">function</span><span class="params">(d, i)</span> {</span> <span class="keyword">return</span> i * <span class="number">10</span>; })
+    .attr(<span class="string">"y"</span>, <span class="function"><span class="keyword">function</span><span class="params">(d)</span> {</span> <span class="keyword">return</span> y(d.y0 + d.y); })
+    .attr(<span class="string">"height"</span>, <span class="function"><span class="keyword">function</span><span class="params">(d)</span> {</span> <span class="keyword">return</span> y(d.y0) - y(d.y0 + d.y); })
+    .call(hook);</code></pre>
+
+<p>Note the last line where we do <code>.call(hook)</code>.</p>
+<p>The hook will make sure that the following call is made once per 16 ms for as long as something is animating (as well as once initially to set things up):</p>
+<pre><code>component.setState({[statename]:fauxelement.toReact()})</code></pre>
+
+<p>The net result is that we have a <strong>virtual DOM representation of the chart inside component state</strong>, and this representation will <strong>update when the chart animates</strong>.</p>
+<p>Here&#39;s how the above component housing Mike&#39;s pretty chart works:</p>
+<ol>
+<li><p>We provide an <strong>initial state</strong> object with <code>chart</code> set to null and the default look as <code>stacked</code>.</p>
+<pre><code>getInitialState: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+ <span class="keyword">return</span> { chart: <span class="literal">null</span>, look: <span class="string">'stacked'</span> }
+},</code></pre>
+</li>
+<li><p>The <strong>render function</strong> merely outputs a look toggler button and the chart virtual DOM:</p>
+<pre><code>render: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+ <span class="keyword">return</span> &lt;div&gt;
+   &lt;button onClick={<span class="keyword">this</span>.toggleLook}&gt;toggle layout&lt;/button&gt;
+   {<span class="keyword">this</span>.state.chart}
+ &lt;/div&gt;
+}</code></pre>
+</li>
+<li><p>Inside <strong><code>componentDidMount</code></strong> I&#39;ve pasted Mike&#39;s code. The only changes I did were the following:</p>
+<ol>
+<li>Feeding D3 a <code>faux</code> element as per Oliver&#39;s approach</li>
+<li>Creating a <code>hook</code> and attaching it to each <code>.transition</code> call as detailed above</li>
+<li>Attaching his radiobutton look toggler callbacks (<code>transitionStacked</code> and <code>transitionGrouped</code>) to the component</li>
+<li>Removing the radio buttons themselves, as well as the initial automatic switch after 3 seconds</li>
+</ol>
+</li>
+<li><p>In the <strong><code>toggleLook</code></strong> component method I call one of the two look togglers:</p>
+<pre><code>toggleLook: <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+ <span class="keyword">if</span> (!<span class="keyword">this</span>.isAnimating()){
+   <span class="keyword">if</span> (<span class="keyword">this</span>.state.look === <span class="string">'stacked'</span>){
+     <span class="keyword">this</span>.setState({ look: <span class="string">'grouped'</span> })
+     <span class="keyword">this</span>.transitionGrouped();
+   } <span class="keyword">else</span> {
+     <span class="keyword">this</span>.setState({ look: <span class="string">'stacked'</span> })
+     <span class="keyword">this</span>.transitionStacked();
+   }
+ }
+},</code></pre>
+
+<p>Note how toggling is wrapped in a <code>this.isAnimating()</code> check - that method is attached to the component by the <code>createHook</code> call. I couldn&#39;t (yet) get spamming the toggle button to clean up correctly, and this was a quick way around that.</p>
+</li>
+</ol>
+<p>And that&#39;s it, that&#39;s the entire component!</p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>I rather like how <code>createHook</code> serves as a(n almost) standalone solution to the animation problem, and look forward to solidifying it and putting it to work. If you try this approach out, please let me know how you fare!</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
