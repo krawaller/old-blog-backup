@@ -1,0 +1,7 @@
+digraph {
+	rankdir = LR
+	Store -> Components [label="notifies"]
+	Actions [label="Action\ncreators"]
+	Components -> Actions [label="calls"]
+	Actions -> Store [label="updates"]
+}

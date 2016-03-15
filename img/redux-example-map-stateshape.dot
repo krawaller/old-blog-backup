@@ -1,0 +1,11 @@
+digraph {
+	rankdir = LR
+	idea [label="App\nidea"]
+	stateshape [label="State\nshape",style=bold]
+	reducer [label="Reducer"]
+	initial [label="Initial\nstate"]
+	
+	idea -> stateshape
+	stateshape -> reducer
+	stateshape -> initial
+}

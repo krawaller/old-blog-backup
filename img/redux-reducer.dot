@@ -1,0 +1,9 @@
+digraph {
+	rankdir = LR
+	Currentstate [label="Current\nstate"]
+	Reducer [shape=box]
+	Newstate [label="New\nstate"]
+	Currentstate -> Reducer
+	Action -> Reducer
+	Reducer -> Newstate
+}

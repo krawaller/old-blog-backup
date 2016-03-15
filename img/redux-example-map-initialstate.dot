@@ -1,0 +1,9 @@
+digraph {
+	rankdir = LR
+	stateshape [label="State\nshape"]
+	initial [label="Initial\nstate",style=bold]
+	store [label="Store"]
+	
+	stateshape -> initial
+	initial -> store
+}

@@ -1,0 +1,12 @@
+digraph {
+	rankdir = LR
+	idea [label="App\nidea"]
+	ui [label="UI",style=bold]
+	uiupdate [label="UI updater"]
+	app [label="App"]
+
+	idea -> ui
+	ui -> uiupdate
+	ui -> app
+	uiupdate -> app
+}

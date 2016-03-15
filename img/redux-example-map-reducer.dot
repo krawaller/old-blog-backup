@@ -1,0 +1,12 @@
+digraph {
+	rankdir = LR
+	actionshapes [label="Action\nshapes"]
+	stateshape [label="State\nshape"]
+	reducer [label="Reducer",style=bold]
+	store [label="Store"]
+
+	actionshapes -> reducer
+	stateshape -> reducer
+	reducer -> store
+
+}

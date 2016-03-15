@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A Redux app tutorial</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Grokking Redux thinking by walking through a minimal app example
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/a-redux-app-tutorial">A Redux app tutorial</a>
+    <span class="post-meta">
+      <time datetime="Mon Mar 14 2016 01:00:00 GMT+0100 (CET)">Mar 14th 2016</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/redux/'>redux</a></span>
+      
+        <span><a href='../../tags/case study/'>case study</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>We recently published a post that <a href="../exploring-redux-middleware/">explored Redux middleware</a>, based on Dan Abramov&#39;s <a href="https://twitter.com/dan_abramov/status/664135757297295360">minimal Redux example</a>. During the conversations following that post it became evident that however minimal the example is, there&#39;s room for an explanation of the how and why behind it. Which is exactly what this post provides - a <strong>walkthrough of a basic Redux example</strong>!</p>
+<p>We&#39;ll be picking apart a super simple Redux app, only slightly bigger in scope than Dan&#39;s example. Like in his example there&#39;ll be no external dependencies - this will be a pure Redux experience.</p>
+<h3 id="our-map">Our map</h3>
+<p><img src="../../img/redux-example-map.png" alt="Map"></p>
+<p>This is the journey we&#39;ll make throughout this post. It might look complicated, but don&#39;t fret - this isn&#39;t a map of the code but of <strong>everything</strong>, that is, the involved <em>ideas</em> and <em>concepts</em> as well as the code.</p>
+<p>From here on, <strong>each headline will correspond to a concept bubble</strong> in the above map. For each concept we&#39;ll repeat a slice of the map showing the concepts that the current concept builds on, and what concepts it in turn is building up to.</p>
+<h3 id="app-idea">App idea</h3>
+<p>Before we can do anything, we need to have an <strong>app idea</strong> so we know what we&#39;re going to create! This will allow us to figure out a <strong>UI</strong>, the <strong>action shapes</strong> and <strong>state shape</strong>.</p>
+<p><img src="../../img/redux-example-appidea.png" alt="Map"></p>
+<p>Let&#39;s make a simple <strong>counter</strong> app. The counter increases whenever the user clicks a <strong>button</strong>, by an amount controlled by an <strong>input</strong>. It should look something like this:</p>
+<p><img src="../../img/redux-example-screen.png" alt="Map"></p>
+<p>Essentially the same app that Dan built in his minimal example, except here we can increase by any amount and not just 1.</p>
+<h3 id="state-shape">State shape</h3>
+<p>Now that we have an <strong>app idea</strong>, let&#39;s decide on the <strong>state shape</strong>. That will in turn let us figure out what our <strong>initial state</strong> should be, as well as define our <strong>reducer</strong>.</p>
+<p><img src="../../img/redux-example-map-stateshape.png" alt="State shape"></p>
+<p>In Redux, all the app state is contained in one single <strong>object</strong>.</p>
+<p>However, in our simple counter app, we only need to track one single thing - the current count. Thus our state can be a <strong>single number</strong>.</p>
+<h3 id="initial-state">Initial state</h3>
+<p>Having decided on a <strong>state shape</strong>, however simple, we can now define an <strong>initial state</strong>. We&#39;ll need this to code our <strong>store</strong>.</p>
+<p><img src="../../img/redux-example-map-initialstate.png" alt="Initial state"></p>
+<p>For our little app that only entails one single decision - at what number should we start the count? Let&#39;s go with 0!</p>
+<p>This also lets us write our first line of code:</p>
+<pre><code><span class="attribute">var initialstate </span>=<span class="string"> 0;</span></code></pre>
+
+<h3 id="action-shapes">Action shapes</h3>
+<p>Let&#39;s design the <strong>actions</strong> needed for our <strong>app idea</strong>! We need them in order to make <strong>action creators</strong> and code the <strong>reducer</strong>.</p>
+<p><img src="../../img/redux-example-map-actions.png" alt="Action shapes"></p>
+<p>In our app only one single thing can happen - <strong>incrementing</strong> the counter. Let&#39;s decide that the <strong>action</strong> describing this event looks like this:</p>
+<pre><code>{
+    type: 'INCREMENT',
+    by: 3
+}</code></pre>
+
+<p>In Redux all actions are described by <strong>objects</strong> with a mandatory <code>type</code> property, and eventual further data payload props. In our case just <code>by</code>.</p>
+<div class="smallnote">
+Note: Normally we would isolate all string constants such as <code>&quot;INCREMENT&quot;</code> to a separate file, but in this simple example we&#39;ll live with having a single magic string like this.
+</div>
+
+
+<h3 id="reducer">Reducer</h3>
+<p>Now that we have designed the <strong>action shapes</strong> and the <strong>state shape</strong> we can move on to define our <strong>reducer</strong>! With the reducer we&#39;ll be able to instantiate a <strong>store</strong>.</p>
+<p><img src="../../img/redux-example-map-reducer.png" alt="Reducer"></p>
+<p>Remember: a <strong>reducer</strong> in Redux lingo is simply a function that takes the current state and an action, and returns a new state:</p>
+<p><img src="../../img/redux-reducer.png" alt="Reducer"></p>
+<p>The reducer in our app just needs to deal with a single action, namely <code>INCREMENT</code>:</p>
+<pre><code><span class="keyword">var</span> reducer = <span class="function"><span class="keyword">function</span><span class="params">(state,action)</span>{</span>
+    <span class="keyword">switch</span>(action.type){
+        <span class="keyword">case</span> <span class="string">'INCREMENT'</span>: <span class="keyword">return</span> state + action.by;
+        <span class="keyword">default</span>: <span class="keyword">return</span> state;
+    }
+};</code></pre>
+
+<p>When the <code>INCREMENT</code> action happens we create a new state by adding <code>action.by</code> to the current state.</p>
+<div class="smallnote">
+Remember that we must <strong>always</strong> have a default case returning the current state, to deal with internal Redux startup actions.
+</div>
+
+<div class="smallnote">
+Since our reducer deals with just a single action it would be better phrased as an <code>if-else</code>. We only used a <code>switch</code> because that&#39;s what a reducer normally looks like.
+</div>
+
+<div class="smallnote">
+For more complex app we would write subreducers that each worked on parts of the state, and then combine them into one single reducer.
+</div>
+
+<h3 id="store">Store</h3>
+<p>With the <strong>initial state</strong> and <strong>reducer</strong> in place, we can now create a <strong>store</strong> for our app state! That will let us code <strong>interaction</strong> for our <strong>app</strong>.</p>
+<p><img src="../../img/redux-example-map-store.png" alt="Store"></p>
+<p>A store is instantiated using <code>Redux.createStore</code>:</p>
+<pre><code><span class="keyword">var</span> store = Redux.createStore(reducer,initialstate);</code></pre>
+
+<div class="smallnote">
+We can also pass in an <strong>enhancer</strong> to <code>createStore</code>, commonly <strong>middlewares</strong>, but we don&#39;t need that here.
+</div>
+
+<div class="smallnote">
+An alternative to providing an <code>initialstate</code> on store creation is to have a default return value inside the reducer.
+</div>
+
+
+<h3 id="action-creators">Action creators</h3>
+<p>Knowing the shape of the <strong>actions</strong> lets us define <strong>action creators</strong> to be consumed by our views to create <strong>interaction</strong>.</p>
+<p><img src="../../img/redux-example-map-actioncreators.png" alt="action creators"></p>
+<p>Only one single action creator is needed in our app.</p>
+<pre><code><span class="keyword">var</span> actionCreators = {
+    increment: <span class="function"><span class="keyword">function</span><span class="params">(int)</span>{</span>
+        <span class="keyword">return</span> {type: <span class="string">'INCREMENT'</span>, by: int};
+    }
+};</code></pre>
+
+<p>Note how the action creator returns an action as previously defined.</p>
+<div class="smallnote">
+Action creators are sometimes called &quot;actions&quot;, which can cause some confusion as to the difference to actual action objects.
+</div>
+
+<div class="smallnote">
+Action creators aren&#39;t strictly needed. Their main point is to provide a place to harbour eventual dispatch logic and save us from having to give our views access to the store.
+</div>
+
+<div class="smallnote">
+In order to sanely define asynchronous actions we can use <a href="https://github.com/gaearon/redux-thunk">Redux-thunk</a>, a middleware which lets us return functions instead of actions from our action creators. We touch on this at the end of our <a href="../exploring-redux-middleware/">middleware post</a>.
+</div>
+
+<h3 id="ui">UI</h3>
+<p>Let&#39;s design the <strong>UI</strong> needed for our <strong>app idea</strong>. The next step will be to complete our <strong>app</strong> by introducing <strong>ui updating</strong>.</p>
+<p><img src="../../img/redux-example-map-ui.png" alt="UI"></p>
+<p>To create our UI we translate our mental screenshot...</p>
+<p><img src="../../img/redux-example-screen.png" alt="screenshot"></p>
+<p>...to this <code>html</code>:</p>
+<pre><code><span class="tag">&lt;<span class="title">body</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>Counter is now at <span class="tag">&lt;<span class="title">span</span> <span class="attribute">id</span>=<span class="value">"num"</span>&gt;</span><span class="tag">&lt;/<span class="title">span</span>&gt;</span>.<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">button</span> <span class="attribute">id</span>=<span class="value">"incbtn"</span>&gt;</span>Increase<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">span</span>&gt;</span> by <span class="tag">&lt;/<span class="title">span</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"number"</span> <span class="attribute">id</span>=<span class="value">"amount"</span> <span class="attribute">value</span>=<span class="value">1</span> /&gt;</span>
+    <span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">body</span>&gt;</span></code></pre>
+
+<h3 id="ui-updater-function">UI updater function</h3>
+<p>Now that we now the <strong>state shape</strong> and the <strong>UI</strong>, we can define a <strong>UI updater</strong> function for our <strong>app</strong>!</p>
+<p><img src="../../img/redux-example-map-uiupdate.png" alt="UI updater"></p>
+<p>The function updates the <strong>UI</strong> depending on the current <strong>state</strong>, which is passed in as an argument:</p>
+<pre><code><span class="keyword">var</span> updateUI = <span class="function"><span class="keyword">function</span><span class="params">(state)</span>{</span>
+    <span class="keyword">var</span> element = document.getElementById(<span class="string">"num"</span>);
+    element.innerHTML = state;
+};</code></pre>
+
+<p>Since our <strong>state</strong> is just the current count, all we need to do is update the <code>#num</code> element with the <code>state</code>.</p>
+<div class="smallnote">
+In a React app this would rather be a <strong>render</strong> function that defined the whole UI instead of mutating existing DOM.
+</div>
+
+<h3 id="interaction">Interaction</h3>
+<p>Now we can complete our <strong>app</strong> by introducing <strong>interaction</strong> through hooking up the <strong>action creators</strong> to the <strong>UI</strong> and dispatch the result to the <strong>store</strong>!</p>
+<p><img src="../../img/redux-example-map-interaction.png" alt="interaction"></p>
+<p>We add a click handler to the <strong>button</strong>, which calls the <strong>action creator</strong> with the value from the <strong>input</strong>. The resulting action is passed to the <strong>store</strong>.</p>
+<pre><code><span class="keyword">var</span> button = document.getElementById(<span class="string">"incbtn"</span>);
+button.addEventListener(<span class="string">"click"</span>,<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="keyword">var</span> input = document.getElementById(<span class="string">"amount"</span>),
+        increase = <span class="built_in">parseInt</span>(input.value),
+        action = actionCreators.increment(increase);
+    store.dispatch(action);
+});</code></pre>
+
+<div class="smallnote">
+Normally you wouldn&#39;t let the views have a store reference like this, instead you&#39;d use some kind of bridge to supply <code>dispatch</code> at setup time. In a React app you&#39;d use the <a href="https://github.com/reactjs/react-redux">React-Redux</a> library which provides exactly such a bridge.
+</div>
+
+<h3 id="application">Application</h3>
+<p>We now have all the pieces we need to finalize our app!</p>
+<p><img src="../../img/redux-example-map-app.png" alt="app"></p>
+<p>The only code we need to add is to have <strong>UI updater</strong> run whenever the <strong>store</strong> is updated and also run an initial rendering.</p>
+<pre><code>store.subscribe(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    updateUI(store.getState());
+});
+updateUI(store.getState());</code></pre>
+
+<p>Now our app is fully functional!</p>
+<p>Here is the entire source code: </p>
+<pre><code><span class="doctype">&lt;!DOCTYPE html&gt;</span>
+<span class="tag">&lt;<span class="title">html</span>&gt;</span>
+<span class="tag">&lt;<span class="title">head</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">meta</span> <span class="attribute">charset</span>=<span class="value">"utf-8"</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">title</span>&gt;</span>JS Bin<span class="tag">&lt;/<span class="title">title</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">script</span> <span class="attribute">src</span>=<span class="value">"https://npmcdn.com/redux/dist/redux.js"</span>&gt;</span><span class="javascript"></span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">head</span>&gt;</span>
+<span class="tag">&lt;<span class="title">body</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>Counter is now at <span class="tag">&lt;<span class="title">span</span> <span class="attribute">id</span>=<span class="value">"num"</span>&gt;</span><span class="tag">&lt;/<span class="title">span</span>&gt;</span>.<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">button</span> <span class="attribute">id</span>=<span class="value">"incbtn"</span>&gt;</span>Increase<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">span</span>&gt;</span> by <span class="tag">&lt;/<span class="title">span</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">input</span> <span class="attribute">type</span>=<span class="value">"number"</span> <span class="attribute">id</span>=<span class="value">"amount"</span> <span class="attribute">value</span>=<span class="value">1</span> /&gt;</span>
+    <span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;<span class="title">script</span> <span class="attribute">type</span>=<span class="value">"text/javascript"</span>&gt;</span><span class="javascript">
+
+<span class="keyword">var</span> initialstate = <span class="number">0</span>;
+
+<span class="keyword">var</span> reducer = <span class="function"><span class="keyword">function</span><span class="params">(state,action)</span>{</span>
+    <span class="keyword">switch</span>(action.type){
+        <span class="keyword">case</span> <span class="string">'INCREMENT'</span>: <span class="keyword">return</span> state + action.by;
+        <span class="keyword">default</span>: <span class="keyword">return</span> state;
+    }
+};
+
+<span class="keyword">var</span> store = Redux.createStore(reducer,initialstate);
+
+<span class="keyword">var</span> actionCreators = {
+    increment: <span class="function"><span class="keyword">function</span><span class="params">(int)</span>{</span>
+        <span class="keyword">return</span> {type: <span class="string">'INCREMENT'</span>, by: int};
+    }
+};
+
+<span class="keyword">var</span> updateUI = <span class="function"><span class="keyword">function</span><span class="params">(state,arg2)</span>{</span>
+    <span class="keyword">var</span> element = document.getElementById(<span class="string">"num"</span>);
+    element.innerHTML = state;
+};
+
+<span class="keyword">var</span> button = document.getElementById(<span class="string">"incbtn"</span>);
+button.addEventListener(<span class="string">"click"</span>,<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+    <span class="keyword">var</span> input = document.getElementById(<span class="string">"amount"</span>),
+        increase = <span class="built_in">parseInt</span>(input.value),
+        action = actionCreators.increment(increase);
+    store.dispatch(action);
+});
+
+store.subscribe(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+  updateUI(store.getState());
+});
+updateUI(store.getState());
+
+</span><span class="tag">&lt;/<span class="title">script</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">body</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">html</span>&gt;</span></code></pre>
+
+<p>And here is the app running in an iframe:</p>
+<iframe src="../../applets/reduxminiexample" height="100px" width="100%"></iframe>
+
+
+<p>For your convenience there&#39;s also a JSBin <a href="https://jsbin.com/milini/edit?html,js,output">here</a>.</p>
+<h3 id="the-redux-cycle">The Redux cycle</h3>
+<p>Note how already this minimal example demonstrates the <strong>unidirectional data flow</strong>:</p>
+<p><img src="../../img/redux-flow.png" alt="cycle"></p>
+<ol>
+<li>We click a button in our &quot;component&quot;</li>
+<li>the component calls an action creator</li>
+<li>the result is dispatched to the store</li>
+<li>which uses the reducer to calculate a new state</li>
+<li>which causes <code>updateUI</code> to update the &quot;component&quot;!</li>
+</ol>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>I realise the danger of this all being Much Ado About Nothing, but I hope that I to some extent was able to convey the Redux way of thinking. It is such a powerful paradigm once you&#39;ve wrapped your head around it!</p>
+<div class="smallnote">
+PS: This post is an (adapted) excerpt from a 2-day React+Redux training course that I provide through my employer Edument. So if you&#39;re in Scandinavia and hungry for more, <a href="http://edument.se/en/training/webdevelopment/react-js">check it out</a>!
+</div>
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>

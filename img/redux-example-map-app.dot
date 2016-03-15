@@ -1,0 +1,16 @@
+digraph {
+	rankdir = LR
+	
+	store [label="Store"]
+	interaction [label="Interaction"]
+	uiupdate [label="UI updater"]
+	ui [label="UI"]
+	app [label="App",style=bold]
+
+	store -> interaction
+	store -> app
+	interaction -> app
+	uiupdate -> app
+	ui -> uiupdate
+	ui -> app
+}

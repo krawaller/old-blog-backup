@@ -1,0 +1,14 @@
+digraph {
+	rankdir = LR
+	reducer [label="Reducer"]
+	initial [label="Initial\nstate"]
+	store [label="Store",style=bold]
+	interaction [label="Interaction"]
+	app [label="App"]
+
+	initial -> store
+	reducer -> store
+	store -> interaction
+	store -> app
+	interaction -> app
+}

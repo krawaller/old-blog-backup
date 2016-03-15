@@ -1,0 +1,13 @@
+digraph {
+	rankdir = LR
+	idea [label="App\nidea",style=bold]
+
+	actionshape [label="Action\nshape"]
+	stateshape [label="State\nshape"]
+	ui [label="UI"]
+
+	idea -> stateshape
+	idea -> actionshape
+	idea -> ui
+
+}

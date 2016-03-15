@@ -1,0 +1,14 @@
+digraph {
+	rankdir = LR
+	
+	actioncreators [label="Action\ncreators"]
+	store [label="Store"]
+	ui [label="UI"]
+	interaction [label="Interaction",style=bold]
+	app [label="App"]
+
+	actioncreators -> interaction
+	store -> interaction
+	ui -> interaction
+	interaction -> app
+}

@@ -1,0 +1,12 @@
+digraph {
+	rankdir = LR
+	idea [label="App\nidea"]
+	actionshapes [label="Action\nshapes",style=bold]
+	actioncreators [label="Action\ncreators"]
+	reducer [label="Reducer"]
+
+	idea -> actionshapes
+	actionshapes -> actioncreators
+	actionshapes -> reducer
+
+}

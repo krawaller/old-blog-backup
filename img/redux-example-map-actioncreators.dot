@@ -1,0 +1,10 @@
+digraph {
+	rankdir = LR
+	actionshapes [label="Action\nshapes"]
+	actioncreators [label="Action\ncreators",style=bold]
+	interaction [label="Interaction"]
+
+	actionshapes -> actioncreators
+	actioncreators -> interaction
+
+}
