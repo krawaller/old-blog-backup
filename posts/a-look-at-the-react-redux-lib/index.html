@@ -291,7 +291,7 @@ store.dispatch({type:'BOGUSEVENT'}); // triggers initial render</span></code></p
 <li><p>Now for <code>QuoteFormContainer</code>. It doesn&#39;t need to map state, but it <strong>expects the <code>callback</code> prop</strong> to be a method whose <strong>return value should be <code>dispatch</code>ed</strong>.</p>
 <p>Thus it suffices to simply <strong>rename the <code>addQuote</code> action creator</strong> to &quot;callback&quot;:</p>
 <pre><code><span class="keyword">var</span> QuoteFormContainer = ReactRedux.connect(
-   <span class="literal">null</span>, <span class="comment">// don't need state</span>
+   <span class="literal">null</span>, <span class="comment">// don't need appstate</span>
    {callback: actionCreators.addQuote}
 )(QuoteForm);</code></pre>
 
@@ -319,9 +319,9 @@ ReactDOM.render(
 <p>This version of our app is published <a href="../../applets/fromcourse/demos/usinglib.html">here</a>, again with the full source appended.</p>
 <h3 id="controversy">Controversy</h3>
 <p>Since React Context is &quot;an advanced an experimental feature&quot; where &quot;the API is likely to change&quot;, there&#39;s been <a href="http://stackoverflow.com/questions/36428355/react-with-redux-what-about-the-context-issue">some concern</a> around the fact that React-Redux (and others) uses it. What if context goes away and React-Redux ceases to function, what will happen to my app which uses both?</p>
-<p>As this post has hopefully shown -  <strong>absolutely nothing</strong>. React-Redux is a very small helper library that saves us from having to pass a store reference around. But that isn&#39;t really a big thing, as isolating store usage to hand-made containers is pretty decopupled too.</p>
+<p>As this post has hopefully shown -  <strong>absolutely nothing</strong>. React-Redux is a very small helper library that saves us from having to pass a store reference around and reduces our code by a few lines. But the hand-made containers are pretty decopupled too, and they&#39;re not that much of a hassle to create.</p>
 <h3 id="wrapping-up">Wrapping up</h3>
-<p>Whether or not you decide to use React-Redux in your React and Redux app or not, I hope this post has helped you to better understand the bridging problem and the various solutions available!</p>
+<p>Whether or not you decide to use React-Redux in your React and Redux app, I hope this post has helped you to better understand the bridging problem and the various solutions available!</p>
 <div class="smallnote">
 PS: Shameless plug time again! This post is an (adapted) excerpt from a 2-day React+Redux training course that I provide through my employer Edument. So if you&#39;re in Scandinavia and hungry for more, <a href="http://edument.se/en/training/webdevelopment/react-js">check it out</a>!
 </div>

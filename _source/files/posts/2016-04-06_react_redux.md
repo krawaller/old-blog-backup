@@ -347,11 +347,11 @@ This version of our app is published [here](../../applets/fromcourse/demos/using
 
 Since React Context is "an advanced an experimental feature" where "the API is likely to change", there's been [some concern](http://stackoverflow.com/questions/36428355/react-with-redux-what-about-the-context-issue) around the fact that React-Redux (and others) uses it. What if context goes away and React-Redux ceases to function, what will happen to my app which uses both?
 
-As this post has hopefully shown -  **absolutely nothing**. React-Redux is a very small helper library that saves us from having to pass a store reference around. But that isn't really a big thing, as isolating store usage to hand-made containers is pretty decopupled too.
+As this post has hopefully shown -  **absolutely nothing**. React-Redux is a very small helper library that saves us from having to pass a store reference around and reduces our code by a few lines. But the hand-made containers are pretty decopupled too, and they're not that much of a hassle to create.
 
 ### Wrapping up
 
-Whether or not you decide to use React-Redux in your React and Redux app or not, I hope this post has helped you to better understand the bridging problem and the various solutions available!
+Whether or not you decide to use React-Redux in your React and Redux app, I hope this post has helped you to better understand the bridging problem and the various solutions available!
 
 <div class="smallnote">
 PS: Shameless plug time again! This post is an (adapted) excerpt from a 2-day React+Redux training course that I provide through my employer Edument. So if you're in Scandinavia and hungry for more, [check it out](http://edument.se/en/training/webdevelopment/react-js)!
