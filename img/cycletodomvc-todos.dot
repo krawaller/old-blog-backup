@@ -1,0 +1,54 @@
+digraph {
+	rankdir = LR
+	bgcolor = transparent
+
+	storage
+	DOM
+	hashChange
+	initialHash
+	{rank=same; DOM, hashChange, initialHash, storage}
+
+	subgraph cluster_main {
+		label="Todos"
+		localStorage [label="localStorage$"]
+		sourceTodosData [label="sourceTodosData$"]
+		model [shape=box]
+		deserialize [shape=box]
+		localStorage -> deserialize
+		localStorage -> model [color=white] # for layout purposes
+		actions
+		intent [shape=box]
+		intent -> actions
+		actions -> model
+		sourceTodosData -> model
+		state [label="state$"]
+		serialize [shape=box]
+		model -> state
+		deserialize -> sourceTodosData
+		amendStateWithChildren [shape=box]
+		amendedState [label="amendedState$"]
+		state -> amendStateWithChildren
+		DOM -> amendStateWithChildren
+		amendStateWithChildren -> amendedState
+		view [shape=box]
+		amendedState -> view
+		state -> serialize
+
+		{rank=same; localStorage, deserialize, intent}
+		{rank=same; actions, sourceTodosData, model}
+		{rank=same; amendStateWithChildren, state, amendedState}
+		{rank=same; serialize, view}
+	}
+
+	storage -> localStorage
+	DOM -> intent
+	hashChange -> intent
+	initialHash -> intent
+
+	storage2 [label="storage$"]
+	DOM2 [label="DOM"]
+	{rank=same; storage2, DOM2}
+
+	view -> DOM2
+	serialize -> storage2
+}

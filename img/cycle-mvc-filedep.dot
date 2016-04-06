@@ -1,0 +1,24 @@
+digraph {
+	rankdir = LR
+	
+	app [label="app.js"]
+	todoindex [label="comp/Todos/index.js"]
+	todointent [label="comp/Todos/intent.js"]
+	todomodel [label="comp/Todos/model.js"]
+	todosink [label="comp/Todos/storage-sink.js"]
+	todosource [label="comp/Todos/storage-source.js"]
+	todoview [label="comp/Todos/view.js"]
+	todoitem [label="comp/TodoItem.js"]
+	utils [label="utils.js"]
+
+	app -> todoindex
+	todoindex -> todointent
+	todoindex -> todomodel
+	todoindex -> todoview
+	todoindex -> todosink
+	todoindex -> todosource
+	todoindex -> todoitem
+
+	todoitem -> utils
+	todointent -> utils
+}

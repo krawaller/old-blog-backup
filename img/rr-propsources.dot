@@ -1,0 +1,13 @@
+digraph {
+	rankdir = LR
+	bgcolor = transparent
+
+	state [label="mapped from state"]
+	dispatch [label="mapped from dispatch"]
+	parent [label="passed from parent"]
+	bake [shape=box]
+	state -> bake
+	dispatch -> bake
+	parent -> bake
+	bake -> props
+}

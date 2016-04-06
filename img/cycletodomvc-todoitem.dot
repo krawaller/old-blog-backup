@@ -1,0 +1,32 @@
+digraph {
+	rankdir = LR
+	bgcolor = transparent
+
+	DOM
+	props [label="props$"]
+	{rank=same; DOM, props}
+
+	subgraph cluster_main {
+		label="TodoItem"
+		intent [shape=box]
+		state [label="state$"]
+		model [shape=box]
+		{rank=same;model,intent}
+		DOM -> intent
+		action [label="action$"]
+		action -> model
+		props -> model
+		model -> state
+		view [shape=box]
+		state -> view
+	}
+
+
+	DOM2 [label="DOM"]
+	action2 [label="action$"]
+	{rank=same; DOM2, action2}
+
+	intent -> action
+	action -> action2
+	view -> DOM2
+}
