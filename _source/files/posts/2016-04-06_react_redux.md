@@ -4,7 +4,7 @@ title: "A look at the React-Redux lib"
 date: 2016-04-06
 tags: [react, redux]
 author: David
-excerpt: Exploring the official bindings between React and Redux
+excerpt: Exploring the official bindings between React and Redux, and getting a better grip on the marriage in the process
 draft: false
 ---
 
