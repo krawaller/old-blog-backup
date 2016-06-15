@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exploring composition in CycleJS</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Experimenting with a helper function for component composition in CycleJS
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/exploring-composition-in-cyclejs">Exploring composition in CycleJS</a>
+    <span class="post-meta">
+      <time datetime="Wed Jun 15 2016 02:00:00 GMT+0200 (CEST)">Jun 15th 2016</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/cyclejs/'>cyclejs</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>This post plays around with a <strong>helper method for combining components in CycleJS</strong>, which can be somewhat painful when a child and parent each depend on streams from the other. You are assumed to be familiar with <a href="http://cycle.js.org/">CycleJS</a> basics.</p>
+<p>We&#39;ll use <a href="https://github.com/cujojs/most">most</a> for our streams in the code examples, but the concept works for any stream implementation.</p>
+<h3 id="our-demo-app">Our demo app</h3>
+<p>To test the concepts we&#39;ll be using the below application. Please kick it around for a bit to see how it works!</p>
+<iframe class="nb" src="../../applets/cyclecomp/demos/nameform_02.html" height="160px" width="100%"></iframe>
+
+<p>There are three components in use here; <strong>Nameform</strong>, <strong>Textentry</strong> and <strong>Confirm</strong>. You can see the border between them as dashed lines in the live app above.</p>
+<p>Here&#39;s a diagram of how they are nested:</p>
+<p><img src="../../diagrams/cycle-components.svg" alt="components"></p>
+<p>We&#39;ll now walk through them one at a time, starting from the inside and working our way out!</p>
+<h3 id="the-confirm-component">The Confirm component</h3>
+<p>The innermost component is the button. It has <strong>three modes</strong>:</p>
+<ul>
+<li>Showing Submit but disabled</li>
+<li>Showing Submit</li>
+<li>Showing Confirm/Cancel</li>
+</ul>
+<p>Here&#39;s the API:</p>
+<p><img src="../../diagrams/cycle-confirm-api.svg" alt="confirm api"></p>
+<p>It <strong>expects the parent to give it a <code>disabled</code> stream</strong> as a source to let it know when to enter the disabled mode. In turn the component <strong>returns a <code>submit</code> stream</strong> for the parent to consume, containing an event per time the user clicked the confirm button.</p>
+<p>Since it is a leaf component the implementation isn&#39;t relevant to the subject of this post, but if you&#39;re interested you can check out the source code <a href="../../applets/cyclecomp/components/confirm.js">here</a>.</p>
+<h3 id="the-textentry-component">The Textentry component</h3>
+<p>This component is responsible for... </p>
+<ul>
+<li>keeping track of the contents of a field</li>
+<li>notifying the parent of submitted values.</li>
+</ul>
+<p>Here&#39;s the API:</p>
+<p><img src="../../diagrams/cycle-textentry-api.svg" alt="textentry api"></p>
+<p><code>Textentry</code> uses the <code>Confirm</code> component, but here things get hairy:</p>
+<ul>
+<li>in order to provide the <code>disabled</code> stream to <code>Confirm</code> we need to know our state</li>
+<li>to know our state we need our action stream</li>
+<li>but to know our action stream we need the <code>submit</code> stream from <code>Confirm</code>!</li>
+</ul>
+<p>This gives us a <strong>circular dependency</strong>, which we must <strong>solve using a proxy</strong>:</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">Textentry</span><span class="params">(sources)</span>{</span>
+
+  <span class="keyword">const</span> disabledproxy = mostSubject.holdSubject(<span class="number">1</span>)
+  <span class="keyword">const</span> childsources = {DOM:sources.DOM,disabled$:disabledproxy}
+  <span class="keyword">const</span> confirm = Confirm(childsources)
+
+  <span class="keyword">const</span> intents = intent(sources, confirm.submit$)
+  <span class="keyword">const</span> state$ = model(intents.action$)
+  <span class="keyword">const</span> vtree$ = view(state$, confirm.DOM)
+
+  <span class="keyword">const</span> disabled$ = state$.map(i =&gt; !i).startWith(<span class="literal">true</span>)
+  disabled$.subscribe(disabledproxy)
+
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    submit$: intents.submit$.map(a =&gt; a.data)
+  }
+});</code></pre>
+
+<p>If you want to see the full source including <code>intent</code>, <code>model</code> and <code>view</code>, check <a href="../../applets/cyclecomp/components/textentry_02.js">here</a>.</p>
+<h3 id="the-nameform-component">The Nameform component</h3>
+<p>This is the outermost component, which <strong>holds the currently submitted name</strong>. It has the following API:</p>
+<p><img src="../../diagrams/cycle-nameform-api.svg" alt="nameform api"></p>
+<p>The <code>store</code> streams in sources and sinks are handled by a <code>localStorage</code> driver, persisting the name between sessions.</p>
+<p>Here&#39;s the source code for this rather skeletal component:</p>
+<pre><code>import Textentry from <span class="string">'./textentry'</span>
+
+<span class="function"><span class="keyword">function</span> <span class="title">Nameform</span><span class="params">(sources)</span>{</span>
+  <span class="keyword">const</span> child = Textentry(sources)
+
+  <span class="keyword">const</span> state$ = child.submit$
+    .startWith(<span class="string">'John'</span>)
+    .merge(sources.store)
+
+  <span class="keyword">const</span> vtree$ = most.combine((state,childvtree)=&gt;{
+    <span class="keyword">return</span> div([
+      childvtree,
+      h4(<span class="string">'Hello, '</span>+state)
+    ]);
+  },state$,child.DOM)
+
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    store: state$
+  }
+}</code></pre>
+
+<p>We didn&#39;t need a proxy here since <code>Textentry</code> didn&#39;t need any input from <code>Nameform</code>.</p>
+<h3 id="introspective">Introspective</h3>
+<p>Here&#39;s an overview of how our components fit together:</p>
+<p><img src="../../diagrams/cycle-composition.svg" alt="nameform api"></p>
+<p>The red arrow shows the circular dependency we had to solve between <code>Textentry</code> and <code>Confirm</code>.</p>
+<p>As you get used to CycleJS, doing the proxy dance becomes second nature and doesn&#39;t really feel that complicated. But it is still rather cumbersome code to write! Even when there isn&#39;t a circular dependency, like when we use <code>Texentry</code> inside <code>Nameform</code>, the code does feel somewhat boilerplaty.</p>
+<p>This spurred me to try to make a <strong>composition helper method</strong>. After several iterations I arrived at an API where I:</p>
+<ul>
+<li>expose the child sinks among the parent sources</li>
+<li>provide (and proxy) needed parent sinks into child sources</li>
+</ul>
+<p><img src="../../diagrams/cycle-helper.svg" alt="helper pattern"></p>
+<p>Let&#39;s see some details!</p>
+<h3 id="the-withcomponent-method">The <code>withComponent</code> method</h3>
+<p>The <code>withComponent</code> helper has the following signature:</p>
+<pre><code>withComponent(main, child, ...dependencies)</code></pre>
+
+<p>where...</p>
+<ul>
+<li><code>main</code> is a component main function</li>
+<li><code>child</code> is a main function for the child component</li>
+<li><code>dependencies</code> are names of props in the parent sink that the child wants as sources</li>
+</ul>
+<p>The helper then <strong>returns a wrapped <code>main</code></strong> where <code>sources</code> will include a <code>childsinks</code> prop. You must make sure that the <code>main</code> function you are wrapping actually includes the expected streams in the sinks.</p>
+<p>Here is <code>Textentry</code> reimplemented using <code>withComponent</code>:</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">main</span><span class="params">(sources)</span> {</span>
+  <span class="keyword">const</span> intents = intent(sources, sources.childsinks.submit$)
+  <span class="keyword">const</span> state$ = model(intents.action$)
+  <span class="keyword">const</span> vtree$ = view(state$, sources.childsinks.DOM)
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    submit$: intents.submit$.map(a =&gt; a.data),
+    disabled$: state$.map(i =&gt; !i).startWith(<span class="literal">true</span>)
+  }
+}
+
+<span class="keyword">const</span> Textentry = withComponent(main,Confirm,<span class="string">"disabled$"</span>)</code></pre>
+
+<p>Scroll up to compare to the previous implementation, and you&#39;ll see that <strong>all proxy dancing went away</strong>. And we didn&#39;t need to touch <code>intent</code>, <code>model</code> or <code>view</code> at all (although if we did we could do some more cleanup).</p>
+<p>We can also <strong>reimplement <code>Nameform</code></strong>:</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">main</span><span class="params">(sources)</span>{</span>
+
+  <span class="keyword">const</span> state$ = sources.childsinks.child.submit$
+    .startWith(<span class="string">'John'</span>)
+    .merge(sources.store)
+
+  <span class="keyword">const</span> vtree$ = most.combine((state,childvtree)=&gt;{
+    <span class="keyword">return</span> div([
+      childvtree,
+      h4(<span class="string">'Hello, '</span>+state)
+    ]);
+  },state$,sources.childsinks.DOM)
+
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    store: state$
+  }
+}
+
+<span class="keyword">const</span> Nameform = withComponent(main,Confirm)</code></pre>
+
+<p>Complexitywise it didn&#39;t make much difference since there was no circular dependency, but there is still something neat about abstracting away the entire composition to a helper call.</p>
+<p>Here is the <strong>source code for <code>withComponent</code></strong>. The <code>proxy</code> comes from <a href="https://github.com/whitecolor/cycle-circular/">cycle-circular</a> by <a href="Whitecolor">https://twitter.com/_whitecolor</a>.</p>
+<pre><code><span class="keyword">const</span> withComponent = (main, constructor, ...dependencies) =&gt; sources =&gt; {
+  <span class="keyword">let</span> proxies = dependencies.reduce((proxies,dep)=&gt;({
+    ...proxies,
+    [dep]: proxy()
+  }),{})
+  <span class="keyword">const</span> childsinks = constructor({...sources,...proxies})
+  <span class="keyword">const</span> sinks = main({...sources,[config.childrensinks||<span class="string">'childsinks'</span>]:childsinks})
+  <span class="built_in">Object</span>.keys(proxies).forEach(proxy =&gt; proxies[proxy].proxy(sinks[proxy]))
+  <span class="keyword">return</span> sinks
+}</code></pre>
+
+<h3 id="the-withcomponents-helper">The <code>withComponents</code> helper</h3>
+<p>Note the plural s at the end! This is for integrating many child components into a parent. Here&#39;s the signature:</p>
+<pre><code>withComponents(main,children)</code></pre>
+
+<p>The <code>children</code> parameter is an object where each key is a reference to a child, and each value an array containing <code>[constructor, ...dependencies]</code> for that child.</p>
+<p>It doesn&#39;t make too much sense since it only uses one child, but here is <code>Textentry</code> using <code>withComponents</code> instead:</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">main</span><span class="params">(sources)</span> {</span>
+  <span class="keyword">const</span> intents = intent(sources, sources.childrensinks.confirm.submit$)
+  <span class="keyword">const</span> state$ = model(intents.action$)
+  <span class="keyword">const</span> vtree$ = view(state$, sources.childrensinks.confirm.DOM)
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    submit$: intents.submit$.map(a =&gt; a.data),
+    disabled$: state$.map(i =&gt; !i).startWith(<span class="literal">true</span>)
+  }
+}
+
+<span class="keyword">const</span> Textentry = withComponents(main,{
+  confirm: [Confirm,<span class="string">"disabled$"</span>]
+})</code></pre>
+
+<p>Note how the sinks from a child are now available at <code>sources.childrensinks[childref]</code>.</p>
+<p>Here&#39;s the source code for <code>withComponents</code>:</p>
+<pre><code><span class="keyword">const</span> withComponents = (main,children) =&gt; sources =&gt; {
+  <span class="keyword">let</span> proxies = {}
+  <span class="keyword">const</span> childrensinks = <span class="built_in">Object</span>.keys(children).reduce((childrensinks,child)=&gt;{
+    <span class="keyword">const</span> [constructor,...dependencies] = children[child]
+    <span class="keyword">const</span> myproxies = dependencies.reduce((myproxies,dep)=&gt;({
+      ...myproxies,
+      [dep]: proxies[dep] || (proxies[dep] = proxy())
+    }),{})
+    <span class="keyword">return</span> {
+      ...childrensinks,
+      [child]: constructor({
+        ...sources,
+        ...myproxies
+      })
+    }
+  },{})
+  <span class="keyword">const</span> sinks = main({...sources,[config.childrensinks||<span class="string">'childrensinks'</span>]:childrensinks})
+  <span class="built_in">Object</span>.keys(proxies).forEach(proxy =&gt; proxies[proxy].proxy(sinks[proxy]))
+  <span class="keyword">return</span> sinks
+}</code></pre>
+
+
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>I <em>think</em> I have found a good abstraction, but I need to do more battletesting to be sure. If it holds up, and the community doesn&#39;t make me aware of something stupid I&#39;ve overlooked (which is entirely possible), I&#39;ll publish it as an npm module.</p>
+<p>If you made it this far you are very likely already enamored with CycleJS, but in the improbable case that you&#39;re not, definitely give it a go! Whether you end up actually using it in sharp situations or not, simply trying it out will expand the way you think about application structure.</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
