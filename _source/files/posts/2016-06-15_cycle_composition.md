@@ -180,7 +180,11 @@ function main(sources) {
 const Textentry = withComponent(main,Confirm,"disabled$")
 ```
 
-Scroll up to compare to the previous implementation, and you'll see that **all proxy dancing went away**. And we didn't need to touch `intent`, `model` or `view` at all (although if we did we could do some more cleanup).
+Comparing to the previous implementation we see that **all proxy dancing went away**. And we didn't need to touch `intent`, `model` or `view` at all (although if we did we could do some more cleanup).
+
+![code anim](../../img/codeanim.gif)
+
+
 
 We can also **reimplement `Nameform`**:
 

@@ -199,7 +199,8 @@ Experimenting with a helper function for component composition in CycleJS
 
 <span class="keyword">const</span> Textentry = withComponent(main,Confirm,<span class="string">"disabled$"</span>)</code></pre>
 
-<p>Scroll up to compare to the previous implementation, and you&#39;ll see that <strong>all proxy dancing went away</strong>. And we didn&#39;t need to touch <code>intent</code>, <code>model</code> or <code>view</code> at all (although if we did we could do some more cleanup).</p>
+<p>Comparing to the previous implementation we see that <strong>all proxy dancing went away</strong>. And we didn&#39;t need to touch <code>intent</code>, <code>model</code> or <code>view</code> at all (although if we did we could do some more cleanup).</p>
+<p><img src="../../img/codeanim.gif" alt="code anim"></p>
 <p>We can also <strong>reimplement <code>Nameform</code></strong>:</p>
 <pre><code><span class="function"><span class="keyword">function</span> <span class="title">main</span><span class="params">(sources)</span>{</span>
 
