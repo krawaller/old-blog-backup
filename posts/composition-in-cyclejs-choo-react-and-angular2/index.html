@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Composition in CycleJS, Choo, React and Angular2</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Comparing loosely coupled composition in four different frameworks by implementing the same small app in all of them
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/composition-in-cyclejs-choo-react-and-angular2">Composition in CycleJS, Choo, React and Angular2</a>
+    <span class="post-meta">
+      <time datetime="Wed Jul 06 2016 02:00:00 GMT+0200 (CEST)">Jul 6th 2016</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/cyclejs/'>cyclejs</a></span>
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+        <span><a href='../../tags/angular2/'>angular2</a></span>
+      
+        <span><a href='../../tags/choo/'>choo</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>In this post we will compare how loosely coupled composition is done in <a href="https://facebook.github.io/react/">React</a>, <a href="https://angular.io">Angular2</a>, <a href="https://github.com/yoshuawuyts/choo">Choo</a> and <a href="http://cycle.js.org/">Cycle</a>. The setup is similar to the TodoMVC project, meaning we will <strong>implement the same application in all frameworks</strong>. Our app is however much smaller in scope than TodoMVC, and focused on the aspect of composition.</p>
+<p>I (David) wrote this in collaboration with the talented fellow JS-nerd <a href="https://github.com/mw222rs/">Mattias</a>, who wrote the Choo version and got me interested in that framework. I hope to lure him into doing more writing here in the future!</p>
+<h3 id="the-application">The application</h3>
+<p>The example application is a simple submission form. The flow is like thus:</p>
+<ol>
+<li>Enter text in the field</li>
+<li>Click submit (and then comfirm)</li>
+<li>The latest submitted text is shown below the field.</li>
+</ol>
+<p>Try it out below!</p>
+<iframe src="../../applets/comparison/index.html" height="100px" width="100%"></iframe>
+
+<p>The application is made up by two components - a child <code>Confirm</code> button, which is then used by the parent <code>Submission</code> component making up the form.</p>
+<p>The <code>Confirm</code> button has three different modes, which should be tracked in an internal <strong>status</strong> state:</p>
+<ul>
+<li>Showing <code>Submit</code> but greyed out (&quot;disabled&quot;)</li>
+<li>Showing <code>Submit</code> (&quot;waiting&quot;)</li>
+<li>Showing <code>Cancel</code> and <code>Confirm</code>. (&quot;confirm&quot;)</li>
+</ul>
+<p>Meanwhile the <code>Submission</code> component holds the current content of the <strong>field</strong>, as well as the latest <strong>submission</strong>.</p>
+<p>The <code>Submission</code> component needs to tell <code>Confirm</code> whether it is <strong>disabled</strong> (since <code>Confirm</code> doesn&#39;t know the contents of the field). <code>Submission</code> also listens for <strong>submit</strong> events from <code>Confirm</code>, to know when a submission is made.</p>
+<p>The state and communication can be expressed through the following diagram:</p>
+<p><img src="../../diagrams/overview.svg" alt="overview"></p>
+<p>We will now implement these two components in all four frameworks, and then discuss the comparison. The main rule will be that <code>Confirm</code> should be decoupled enough to be reusable in a completely different app.</p>
+<p>All of the code can be found on <a href="https://github.com/krawaller/comparison">GitHub</a> as well as in the Webpackbins linked in each chapter. </p>
+<h3 id="react-implementation">React implementation</h3>
+<p>First out - React! You can find a Webpackbin with the app running at <a href="http://www.webpackbin.com/Ey70dIVI-">http://www.webpackbin.com/Ey70dIVI-</a>.</p>
+<p>React&#39;s model is very simple - everything is made up by <strong>components</strong>, whose UI are the results of their internal <strong>state</strong> and the <strong>properties</strong> passed from the parent.</p>
+<p><img src="../../diagrams/reactcomp.svg" alt="reactcomp"></p>
+<p>A parent talks to the child by passing props. If a child needs to be able to answer, we pass a <em>callback</em> prop which the child should call at the appropriate time.</p>
+<p><img src="../../diagrams/reactcommunication.svg" alt="reactcommunication"></p>
+<p>If we need more app-wide communication we might want to use something like <a href="http://redux.js.org/">Redux</a> instead, but that would be overkill for this implementation.</p>
+<h4 id="the-confirm-component-in-react">The <code>Confirm</code> component in React</h4>
+<pre><code><span class="reserved">let</span> Confirm = React.createClass({
+  <span class="attribute">getInitialState</span>: <span class="function"><span class="params">()</span>=&gt;</span> ({<span class="attribute">status</span>:<span class="string">'waiting'</span>}),
+  maybe() { <span class="keyword">this</span>.setState({<span class="attribute">status</span>:<span class="string">'confirm'</span>}) },
+  changedmymind() { <span class="keyword">this</span>.setState({<span class="attribute">status</span>:<span class="string">'waiting'</span>}) },
+  yesimsure() {
+    <span class="keyword">this</span>.props.confirm();
+    <span class="keyword">this</span>.setState({<span class="attribute">status</span>:<span class="string">'waiting'</span>})
+  },
+  render() {
+    <span class="keyword">return</span> <span class="keyword">this</span>.state.status !== <span class="string">'confirm'</span>
+    ? &lt;button onClick={<span class="keyword">this</span>.maybe} disabled={<span class="keyword">this</span>.props.disabled}&gt;Submit&lt;/button&gt;
+    : &lt;span&gt;
+        &lt;button onClick={<span class="keyword">this</span>.changedmymind}&gt;Cancel&lt;/button&gt;
+        &lt;button onClick={<span class="keyword">this</span>.yesimsure}&gt;Confirm&lt;/button&gt;
+      &lt;/span&gt;
+  }
+})</code></pre>
+
+<p>The <code>status</code> of the button is kept in state, while whether or not we&#39;re <code>disabled</code> is received as a prop from the parent. We also receive a <code>props.confirm</code> callback, which we call when the user confirms their submission.</p>
+<h4 id="the-submission-component-in-react">The <code>Submission</code> component in React</h4>
+<pre><code><span class="keyword">let</span> Submission = React.createClass({
+  getInitialState: ()=&gt; ({submission:<span class="string">''</span>,field:<span class="string">''</span>}),
+  onConfirm() { <span class="keyword">this</span>.setState({submission:<span class="keyword">this</span>.state.field, field:<span class="string">''</span>}) },
+  onChange(e) { <span class="keyword">this</span>.setState({field:e.target.<span class="keyword">value</span>}) },
+  render() { <span class="keyword">return</span> (
+    &lt;div&gt;
+      &lt;input <span class="keyword">value</span>={<span class="keyword">this</span>.state.field} onChange={<span class="keyword">this</span>.onChange}/&gt;
+      &lt;Confirm disabled={!<span class="keyword">this</span>.state.field} confirm={<span class="keyword">this</span>.onConfirm}/&gt;
+      &lt;p&gt;Submitted <span class="keyword">value</span>: {<span class="keyword">this</span>.state.submission}&lt;/p&gt;
+    &lt;/div&gt;
+  )}
+})</code></pre>
+
+<p>We can see that <code>submission</code> and <code>field</code> is explicitly kept in state. We pass <code>disabled</code> and an <code>onConfirm</code> handler to the child.</p>
+<p>Note that we could opt to store <code>field</code> in the DOM node and read it from the element in the <code>onConfirm</code> handler using a <a href="https://facebook.github.io/react/docs/more-about-refs.html">ref</a>. This however isn&#39;t considered as idiomatic. See more <a href="https://facebook.github.io/react/docs/forms.html#uncontrolled-components">here</a>.</p>
+<h3 id="angular2-implementation">Angular2 implementation</h3>
+<p>Now for the Angular2 implementation, which you can get in a Webpackbin at <a href="http://www.webpackbin.com/VkPFPSXL-">http://www.webpackbin.com/VkPFPSXL-</a>. Unlike it&#39;s predecessor, an Angular2 app is made up by composable components much like React.</p>
+<p>A component consists of a decorator call containing template and other metadata, and a class for holding state and methods. Inputs and outputs are explicitly declared in these classes.</p>
+<h4 id="the-confirm-component-in-angular2">The <code>Confirm</code> component in Angular2</h4>
+<pre><code>@Component({
+  selector: <span class="string">'confirm'</span>,
+  template: `
+    &lt;span *ngIf=<span class="string">"status !== 'confirm'"</span>&gt;
+      &lt;button (click)=<span class="string">"maybe()"</span> [disabled]=<span class="string">"status === 'disabled'"</span>&gt;Submit&lt;/button&gt;
+    &lt;/span&gt;
+    &lt;span *ngIf=<span class="string">"status === 'confirm'"</span>&gt;
+      &lt;button (click)=<span class="string">"changedmymind()"</span>&gt;Cancel&lt;/button&gt;
+      &lt;button (click)=<span class="string">"yesimsure()"</span>&gt;Confirm&lt;/button&gt;
+    &lt;/span&gt;
+  `
+})
+export <span class="class"><span class="keyword">class</span> <span class="title">Confirm</span> {</span>
+  status: <span class="keyword">string</span> = <span class="string">'waiting'</span>
+  @Output() confirm = <span class="keyword">new</span> EventEmitter()
+  @Input() <span class="keyword">set</span> disabled(<span class="keyword">bool</span>: boolean){
+    <span class="keyword">this</span>.status = <span class="keyword">bool</span> ? <span class="string">'disabled'</span> : <span class="string">'waiting'</span>
+  }
+  maybe() { <span class="keyword">this</span>.status = <span class="string">'confirm'</span> }
+  changedmymind() { <span class="keyword">this</span>.status = <span class="string">'waiting'</span> }
+  yesimsure() { <span class="keyword">this</span>.confirm.emit(); <span class="keyword">this</span>.status = <span class="string">'waiting'</span> }
+}</code></pre>
+
+<p>The button <code>status</code> is stored in a property in the class. We see that <code>disabled</code> is defined as a boolean <code>Input</code>, to which we apply a setter that toggles <code>status</code> accordingly.</p>
+<p>The <code>confirm</code> action is an EventEmitter <code>Output</code>. These are <a href="http://reactivex.io/">RxJS</a> streams, which the rendering parents can subscribe to.</p>
+<h4 id="the-submission-component-in-angular2">The <code>Submission</code> component in Angular2</h4>
+<pre><code>@Component({
+  selector: <span class="string">'submission'</span>,
+  template: `
+    &lt;input <span class="preprocessor">#field (input)="0"&gt;</span>
+    &lt;confirm (confirm)=<span class="string">"onConfirm()"</span> [disabled]=<span class="string">"!field.value.length"</span>&gt;&lt;/confirm&gt;
+    &lt;p&gt;Submitted <span class="keyword">value</span>: {{submission}}&lt;/p&gt;
+  `,
+  directives: [Confirm]
+})
+class Submission {
+  @ViewChild(<span class="string">'field'</span>) input: Control
+  field: <span class="keyword">string</span>
+  submission: <span class="keyword">string</span>
+  onConfirm() {
+    <span class="keyword">this</span>.submission = <span class="keyword">this</span>.input.nativeElement.<span class="keyword">value</span>
+    <span class="keyword">this</span>.input.nativeElement.<span class="keyword">value</span> = <span class="string">''</span>
+  }
+}</code></pre>
+
+<p>Here we attach an <code>onConfirm</code> listener to the <code>confirm</code> stream output from the child component.</p>
+<p>Unlike the React implementation we don&#39;t store the <code>field</code> value in state, instead we leave this to the DOM and simply collect it when we need it using <a href="https://angular.io/docs/ts/latest/api/core/index/ViewChild-var.html"><code>ViewChild</code></a>.</p>
+<p>We don&#39;t really need to add the <code>field</code> and <code>submission</code> props to the class definition since we don&#39;t initialize them, but it is good to do it anyway for clarity.</p>
+<h3 id="cyclejs-implementation">CycleJS implementation</h3>
+<p>Of these four frameworks CycleJS is probably the most exotic one. A Cycle app contains no imperative programming and no state machines - everything is just streams! A component receives a bunch of streams as input (called <code>sources</code>), and returns another bunch as output (called <code>sinks</code>).</p>
+<p>We will implement our app following the <a href="http://cycle.js.org/model-view-intent.html">Model-View-Intent</a> pattern:</p>
+<p><img src="../../diagrams/mvi.svg" alt="mvi"></p>
+<ol>
+<li>A component receives <code>sources</code> from the parent or the root renderer</li>
+<li>The <code>intent</code> function translates these to a stream of <code>actions</code></li>
+<li>The <code>actions</code> are sent to the <code>model</code> function who returns the component <code>state</code></li>
+<li>That <code>state</code> is given to the <code>view</code> function which translates it to <strong>virtual DOM</strong>, often called <code>vtree</code></li>
+<li>Finally we return the <code>vtree</code> as part of the <code>sinks</code>, maybe coupled with other stuff from <code>actions</code> and <code>state</code> that are of interest to the outside world.</li>
+</ol>
+<p>The Webpackbin for this implementation can be found at <a href="http://www.webpackbin.com/VJZkw6SUZ">http://www.webpackbin.com/VJZkw6SUZ</a>.</p>
+<h4 id="the-confirm-component-in-cyclejs">The <code>Confirm</code> component in CycleJS</h4>
+<pre><code><span class="keyword">const</span> intent = sources=&gt; xs.merge(
+  sources.disabled$.map(i=&gt; i ? <span class="string">'DISABLE'</span> : <span class="string">'ENABLE'</span>),
+  sources.DOM.select(<span class="string">'.maybe'</span>).events(<span class="string">'click'</span>).map(i=&gt;<span class="string">'MAYBE'</span>),
+  sources.DOM.select(<span class="string">'.cancel'</span>).events(<span class="string">'click'</span>).map(i=&gt;<span class="string">'CANCEL'</span>),
+  sources.DOM.select(<span class="string">'.confirm'</span>).events(<span class="string">'click'</span>).map(i=&gt;<span class="string">'CONFIRM'</span>)
+)
+
+<span class="keyword">const</span> model = action$ =&gt; action$.fold((s,action)=&gt; {
+  <span class="keyword">switch</span>(action){
+    <span class="keyword">case</span> <span class="string">'DISABLE'</span>: <span class="keyword">return</span> <span class="string">'disabled'</span>
+    <span class="keyword">case</span> <span class="string">'MAYBE'</span>: <span class="keyword">return</span> <span class="string">'confirm'</span>
+    <span class="keyword">case</span> <span class="string">'ENABLE'</span>: <span class="keyword">return</span> s === <span class="string">'disabled'</span> ? <span class="string">'waiting'</span> : s
+    <span class="keyword">default</span>: <span class="keyword">return</span> <span class="string">'waiting'</span>
+  }
+},<span class="string">'disabled'</span>)
+
+<span class="keyword">const</span> view = state$ =&gt; state$.map(state=&gt; state === <span class="string">'confirm'</span>
+  ? span([button(<span class="string">'.confirm'</span>,<span class="string">'Confirm'</span>),button(<span class="string">'.cancel'</span>,<span class="string">'Cancel'</span>)])
+  : button(<span class="string">'.maybe'</span>,{attrs:{disabled: state === <span class="string">'disabled'</span>}},<span class="string">'Submit'</span>)
+)
+
+<span class="keyword">const</span> Confirm = sources=&gt; {
+  <span class="keyword">const</span> action$ = intent(sources)  
+  <span class="keyword">const</span> state$ = model(action$)
+  <span class="keyword">const</span> vtree$ = view(state$)
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    submit$: action$.filter(i =&gt; i === <span class="string">'CONFIRM'</span>)
+  }
+}</code></pre>
+
+<p>Note how we assume <code>disabled$</code> to exist among <code>sources</code>, which needs to be provided by the parent. The <code>intent</code> function doesn&#39;t separate local and foreign events - we get a stream containing <code>DISABLE</code> and <code>ENABLE</code> from the parent, jumbled with the local events <code>MAYBE</code>, <code>CANCEL</code> and <code>CONFIRM</code>.</p>
+<p>The <code>model</code> function returns a single string as state, namely which mode the button is in - <code>disabled</code>, <code>waiting</code> or <code>confirm</code>.</p>
+<h4 id="the-submission-component-in-cyclejs">The <code>Submission</code> component in CycleJS</h4>
+<pre><code><span class="reserved">const</span> <span class="function"><span class="title">intent</span> = <span class="params">(DOM,childSubmit$)</span>=&gt;</span> {
+  <span class="reserved">const</span> input$ = DOM.select(<span class="string">'.field'</span>).events(<span class="string">'input'</span>)
+  <span class="reserved">const</span> newValue$ = input$
+    .map(e<span class="function"> =&gt;</span> ({<span class="attribute">type</span>:<span class="string">'INPUT'</span>, <span class="attribute">data</span>:e.target.value}))
+  <span class="reserved">const</span> submit$ = input$
+    .map(i=&gt; childSubmit$.map(s=&gt;({<span class="attribute">type</span>:<span class="string">'SUBMIT'</span>, <span class="attribute">data</span>:i.target.value})))
+    .flatten()
+  <span class="keyword">return</span> xs.merge(submit$,newValue$)
+}
+
+<span class="reserved">const</span> model = action$<span class="function"> =&gt;</span> action$.fold<span class="function"><span class="params">((state, action)=&gt; {
+  <span class="keyword">switch</span>(action.type){
+    <span class="reserved">case</span> <span class="string">'INPUT'</span>: <span class="keyword">return</span> {...state, field: action.data}
+    <span class="reserved">case</span> <span class="string">'SUBMIT'</span>: <span class="keyword">return</span> {submission: action.data, field: <span class="string">''</span>}
+    <span class="reserved">default</span>: <span class="keyword">return</span> state
+  }
+}, {submission:<span class="string">''</span>,field:<span class="string">''</span>} )</span>
+
+<span class="title">const</span> <span class="title">view</span> = <span class="params">(state$,confirmvtree$)</span>=&gt;</span>
+  xs.combine<span class="function"><span class="params">(state$,confirmvtree$)</span>.<span class="title">map</span><span class="params">(([state,confirmvtree])=&gt;
+    div([
+      input(<span class="string">'.field'</span>, {props:{value: state.field}}),
+      confirmvtree,
+      p(<span class="string">'Submitted value: '</span>+state.submission)
+    ])
+  )</span>
+
+<span class="title">function</span> <span class="title">SubmissionMain</span><span class="params">(sources)</span>{
+  <span class="title">const</span> <span class="title">action$</span> = <span class="title">intent</span><span class="params">(sources.DOM, sources.childsinks.submit$)</span>
+  <span class="title">const</span> <span class="title">state$</span> = <span class="title">model</span><span class="params">(action$)</span>
+  <span class="title">const</span> <span class="title">vtree$</span> = <span class="title">view</span><span class="params">(state$, sources.childsinks.DOM)</span>
+  <span class="title">return</span> {
+    <span class="title">DOM</span>: <span class="title">vtree$</span>,
+    <span class="title">disabled$</span>: <span class="title">action$</span>.<span class="title">map</span><span class="params">(a =&gt; a.type === <span class="string">'SUBMIT'</span> || !a.data)</span>
+  }
+}
+
+<span class="title">const</span> <span class="title">Submission</span> = <span class="title">withComponent</span><span class="params">(SubmissionMain,Confirm,<span class="string">'disabled$'</span>)</span></span></code></pre>
+
+<p>The <code>withComponent</code> composition helper is the one introduced in <a href="http://blog.krawaller.se/posts/exploring-composition-in-cyclejs/">this post</a>. The purpose is to help solve the circular dependencies between parent and child sinks and sources, by making child sinks appear in parent sources, and selected parent sources in child sinks (in our case <code>disabled$</code>).</p>
+<p>The <code>intent</code> function picks up two different actions - a local <code>INPUT</code> action when the user types in the field, and a <code>SUBMIT</code> action bubbling up from the child.</p>
+<p>The <code>model</code> function derives a state object containing <code>field</code> and <code>submission</code>, which we recognise from the other implementations.</p>
+<h3 id="choo-implementation">Choo implementation</h3>
+<p>Last but not least, here is the Choo implementation! It is running in a Webpackbin at <a href="http://www.webpackbin.com/4y4Mt94UZ">http://www.webpackbin.com/4y4Mt94UZ</a>.</p>
+<p>If CycleJS is the most exotic of our four frameworks, Choo is definitely the newest of the bunch with its first commit only a month ago. Choo is tiny, weighing in at only 7kb and with a small, easy-to-learn API. I (Mattias) kind of think of it as a shrunken down react-redux app with pink sparkles and strawberry frosting. It&#39;s darn cute.</p>
+<p>In Choo it is common to have an app-wide <code>model</code>, very similar to Redux&#39; role in React. But according to our self-imposed rules the components should be stand-alone and reusable, and so must contain their own model definitions! We accomplish this by defining the components in constructors which you pass the <code>app</code> object to, so each component can register the model parts they need.</p>
+<p><img src="../../diagrams/chooconstr.svg" alt="choo constr"></p>
+<p>A Choo <code>model</code> definition consists of <code>state</code>, <code>reducers</code> to manipulate that state, and <code>effects</code> for side effects. If the optional <code>namespace</code> property is set the reducers and effects can only access the state within its own model to provide, as the documentation puts it, &#39;sturdiness&#39;.</p>
+<p>The actual component is then just a pure function that receives the application <code>state</code>, a <code>send</code> method for triggering effects and reducers, and whatever else you want to pass in. The component function returns DOM nodes for rendering, but unlike the other three frameworks Choo does not use virtual DOM nodes, but instead uses <a href="https://github.com/patrick-steele-idem/morphdom">morphdom</a> to diff real DOM nodes. </p>
+<p><img src="../../diagrams/choorender.svg" alt="choo render"></p>
+<p>Note that we are using Choo version <code>2.3.1</code>, but <code>3.0.0</code> <a href="https://github.com/yoshuawuyts/choo/blob/master/CHANGELOG.md#300">just came out</a>. We&#39;ll hopefully take a look at what has changed in an upcoming, all-choo post!</p>
+<h4 id="the-confirm-component-in-choo">The <code>Confirm</code> component in Choo</h4>
+<pre><code>const Confirm = (app,confirmevent)=&gt; {
+  app.model({
+    namespace: 'confButt',
+    state: { status: 'waiting' },
+    reducers: {
+      maybeSubmit: (action, state) =&gt; ({status: 'confirm'}),
+      cancelSubmit: (action, state) =&gt; ({status: 'waiting'})
+    },
+    effects: {
+      confirmSubmit: (action, state, send)=&gt; {
+        send('confButt:cancelSubmit')
+        send(confirmevent)
+      }
+    }
+  })
+  return (state, disabled, send) =&gt; state.confButt.status !== 'confirm' 
+    ? choo.view`
+      &lt;button onclick=${e =&gt; send('confButt:maybeSubmit')} disabled=${disabled}&gt;Submit&lt;/button&gt;
+    `
+    : choo.view`
+      &lt;span&gt;
+        &lt;button onclick=${e =&gt; send('confButt:cancelSubmit')}&gt;Cancel&lt;/button&gt;
+        &lt;button onclick=${e =&gt; send('confButt:confirmSubmit')}&gt;Confirm&lt;/button&gt;
+      &lt;/span&gt;
+    `
+}</code></pre>
+
+<p>The constructor is given the <code>app</code> object, and the name of the event to trigger when the user has confirmed the action (<code>confirmSubmit</code>). Our model also defines the local events <code>maybeSubmit</code> and <code>cancelSubmit</code>. Together these three change the value of the only state variable, <code>status</code>, which can be <code>waiting</code> or <code>confirm</code>. Whether or not we are disabled is passed as an argument to the renderer.</p>
+<p>In a perfect world this component should only be given its part of the app state, but for that to be possible we must leak the namespace name to the parent.</p>
+<h4 id="the-submission-component-in-choo">The <code>Submission</code> component in Choo</h4>
+<pre><code><span class="keyword">const</span> Submission = app =&gt; {
+  <span class="keyword">const</span> confirm = Confirm(app,<span class="string">'sub:submit'</span>)
+  app.model({
+    namespace: <span class="string">'sub'</span>,
+    state: { field: <span class="string">''</span>, submission: <span class="string">''</span> },
+    reducers: {
+      setField: (action, state) =&gt; ({ field: action.payload }),
+      submit: (action, state) =&gt; ({ field: <span class="string">''</span>, submission: state.field })
+    }
+  })
+  <span class="keyword">return</span> (params, state, send) =&gt; {
+    <span class="keyword">const</span> onChangeHandler = e =&gt; send(<span class="string">'sub:setField'</span>, {payload:e.target.value} )
+    <span class="keyword">return</span> choo.view`
+      &lt;div&gt;
+        <span class="xml"><span class="tag">&lt;<span class="title">input</span> <span class="attribute">value</span>=<span class="value">${state.sub.field}</span> <span class="attribute">oninput</span>=<span class="value">${onChangeHandler}</span> /&gt;</span>
+        ${confirm(state, !state.sub.field, send)}
+        <span class="tag">&lt;<span class="title">p</span>&gt;</span>Submitted value: ${state.sub.submission}<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+      <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    `
+  }
+}</span></code></pre>
+
+<p>The state for <code>Submission</code> contains the by now familiar <code>field</code> and <code>submission</code>. There are only two actions, <code>setField</code> and <code>submit</code>. The latter is given to the child constructor (<code>sub:submit</code>) to be triggered from there.</p>
+<h3 id="comparison">Comparison</h3>
+<p>We&#39;ll now bounce these implementations off one another, comparing various aspects:</p>
+<h4 id="comparing-rendering">Comparing rendering</h4>
+<p>Although Angular2 is using templates while React expresses the UI inline (here we use JSX), the way they render children are very similar - we express them as elements intermingled with regular DOM elements.</p>
+<p>Here we render <code>Confirm</code> inside <code>Submission</code> in <strong>React</strong>:</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">input</span> <span class="attribute">value</span>=<span class="value">{this.state.field}</span> <span class="attribute">onChange</span>=<span class="value">{this.onChange}</span>/&gt;</span>
+  <span class="tag">&lt;<span class="title">Confirm</span> <span class="attribute">disabled</span>=<span class="value">{!this.state.field}</span> <span class="attribute">confirm</span>=<span class="value">{this.onConfirm}</span>/&gt;</span>
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Submitted value: {this.state.submission}<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span></code></pre>
+
+<p>And the corresponding lines in <strong>Angular2</strong>:</p>
+<pre><code><span class="xml">`
+<span class="tag">&lt;<span class="title">input</span> #<span class="attribute">field</span> (<span class="attribute">input</span>)=<span class="value">"0"</span>&gt;</span>
+<span class="tag">&lt;<span class="title">confirm</span> (<span class="attribute">confirm</span>)=<span class="value">"onConfirm()"</span> [<span class="attribute">disabled</span>]=<span class="value">"!field.value.length"</span>&gt;</span><span class="tag">&lt;/<span class="title">confirm</span>&gt;</span>
+<span class="tag">&lt;<span class="title">p</span>&gt;</span>Submitted value: </span><span class="expression">{{<span class="variable">submission</span>}}</span><span class="xml"><span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+`</span></code></pre>
+
+<p>For both React and Angular2, <strong>communication is intimately tied to rendering</strong>. We pass data to the child as we render it.</p>
+<p>As expected <strong>CycleJS</strong> is an odd bird. The DOM nodes are method calls (granted, <a href="http://cycle.js.org/getting-started.html">we could use JSX here</a>), and the child is a stream event.</p>
+<pre><code>div([
+  input(<span class="string">'.field'</span>, {props:{value: state.field}}),
+  confirmvtree,
+  p(<span class="string">'Submitted value: '</span>+state.submission)
+])</code></pre>
+
+<p>The setup for the child is somewhere else entirely. Communication is done purely through the circle (or, <em>cycle</em>) of streams.</p>
+<p>If we look at <strong>Choo</strong> it seems to fall somewhere inbetween CycleJS and the others; we set up the child as we render it, but we do it through an explicit method call:</p>
+<pre><code>`&lt;div&gt;
+  <span class="xml"><span class="tag">&lt;<span class="title">input</span> <span class="attribute">value</span>=<span class="value">${state.sub.field}</span> <span class="attribute">oninput</span>=<span class="value">${onChangeHandler}</span> /&gt;</span>
+  ${confirm(state, !state.sub.field, send)}
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Submitted value: ${state.sub.submission}<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span>`</span></code></pre>
+
+<p>Child to parent communication is done through the all-purpose <code>send</code> function instead of by specific callbacks/streams as in React/Angular2.</p>
+<h4 id="comparing-state">Comparing state</h4>
+<p>In <strong>React</strong>, the state of a component can be seen in the <code>getInitialState</code> calls, as well as in the subsequent <code>this.setState</code> setter and <code>this.state</code> getter calls.</p>
+<pre><code><span class="regexp">//</span> In the Confirm component
+<span class="attribute">getInitialState</span>: <span class="function"><span class="params">()</span>=&gt;</span> ({<span class="attribute">status</span>:<span class="string">'waiting'</span>})
+
+<span class="regexp">//</span> In the Submission component
+<span class="attribute">getInitialState</span>: <span class="function"><span class="params">()</span>=&gt;</span> ({<span class="attribute">submission</span>:<span class="string">''</span>,<span class="attribute">field</span>:<span class="string">''</span>})</code></pre>
+
+<p>We could also make the expected props in <code>Confirm</code> - the <code>disabled</code> boolean and <code>confirm</code> callback - more clear by defining them using <a href="https://facebook.github.io/react/docs/reusable-components.html"><code>propTypes</code></a>.</p>
+<p>For the <strong>Angular2</strong> components the state variables are directly visible as props on the classes:</p>
+<pre><code>// <span class="keyword">In</span> the Confirm <span class="keyword">component</span>
+status: <span class="typename">string</span> = <span class="attribute">'waiting</span>'
+@Input() set disabled(bool: <span class="typename">boolean</span>)
+
+// <span class="keyword">In</span> the Submission <span class="keyword">component</span>
+@ViewChild(<span class="attribute">'field</span>') input: Control
+field: <span class="typename">string</span>
+submission: <span class="typename">string</span></code></pre>
+
+<p>What corresponds to <em>props</em> in React are simply instance variables prefixed with <code>@Input</code>.</p>
+<p>In <strong>CycleJS</strong>, a map of the component state can be found in the seed for the <code>fold</code> (elsewhere often called <code>reduce</code>) call in the <code>model</code> method:</p>
+<pre><code><span class="comment">// In the Confirm component</span>
+action$.fold((s,action)=&gt; {
+  <span class="keyword">switch</span>(action){
+    <span class="comment">// ...cases trunkated...</span>
+  }
+},<span class="string">'disabled'</span>)  <span class="comment">// &lt;---- initial state</span>
+
+<span class="comment">// In the Submission component</span>
+action$.fold((state, action)=&gt; {
+  <span class="keyword">switch</span>(action.type){
+    <span class="comment">// ...cases trunkated...</span>
+  }
+}, {submission:<span class="string">''</span>,field:<span class="string">''</span>}) <span class="comment">// &lt;---- initial state</span></code></pre>
+
+<p>Since we boil down all outside input from the <code>intent</code> function to a single state in the <code>model</code> function (which is where the <code>fold</code> call is located), <code>disabled</code> becomes one of the possible states for the Confirm component.</p>
+<p>Finally in <strong>Choo</strong>, the state is explicitly defined inside the object passed to <code>app.model</code>:</p>
+<pre><code><span class="comment">// In the Confirm component</span>
+app.model({
+  state: { status: <span class="string">'waiting'</span> },
+  <span class="comment">// ...other stuff trunkated...</span>
+})
+
+<span class="comment">// In the Submission component</span>
+app.model({
+  state: { field: <span class="string">''</span>, submission: <span class="string">''</span> },
+  <span class="comment">// ...other stuff trunkated...</span>
+})</code></pre>
+
+<h4 id="comparing-communication">Comparing communication</h4>
+<p>In <strong>React</strong> the communication is defined in the rendering, as we saw. The parent passes data and callbacks, and the child calls the callback.</p>
+<pre><code><span class="reserved">let</span> Submission = React.createClass({
+  <span class="regexp">//</span> ...other stuff trunkated...
+  onConfirm() { <span class="keyword">this</span>.setState({<span class="attribute">submission</span>:<span class="keyword">this</span>.state.field,<span class="attribute">field</span>:<span class="string">''</span>}) },
+  render() {
+    <span class="regexp">//</span> passing `<span class="javascript"><span class="keyword">this</span>.onConfirm</span>` as `<span class="javascript">confirm</span>` prop to child
+  }
+})
+
+<span class="reserved">let</span> Confirm = React.createClass({
+  <span class="regexp">//</span> ...other stuff trunkated...
+  yesimsure() {
+    <span class="keyword">this</span>.props.confirm(); &lt;--- calling the parent
+    <span class="keyword">this</span>.setState({<span class="attribute">status</span>:<span class="string">'waiting'</span>})
+  },
+  render() {
+    <span class="regexp">//</span> uses `<span class="javascript"><span class="keyword">this</span>.yesimsure</span>` as button clickhandler
+  }
+})</code></pre>
+
+<p>The <strong>Angular2</strong> pattern is very similar, except the child-parent communication is a stream instead of a callback.</p>
+<pre><code><span class="comment">// Confirm</span>
+<span class="annotation">@Component</span>({
+  template: <span class="string">'...'</span> <span class="comment">// executes `yesimsure()` on button click</span>
+  <span class="comment">// ...other stuff trunkated...</span>
+})
+export <span class="class"><span class="keyword">class</span> <span class="title">Confirm</span> {</span>
+  <span class="comment">// ...other stuff trunkated...</span>
+  yesimsure() {
+    <span class="keyword">this</span>.confirm.emit();  &lt;--- calling the parent
+    <span class="keyword">this</span>.status = <span class="string">'waiting'</span>
+  }
+}
+
+<span class="comment">// Submission</span>
+<span class="annotation">@Component</span>({
+  template: <span class="string">'...'</span> <span class="comment">// registers `onConfirm` as listener to child `confirm` prop</span>
+})
+<span class="class"><span class="keyword">class</span> <span class="title">Submission</span> {</span>
+  <span class="comment">// ...other stuff trunkated...</span>
+  onConfirm() {
+    <span class="keyword">this</span>.submission = <span class="keyword">this</span>.input.nativeElement.value
+    <span class="keyword">this</span>.input.nativeElement.value = <span class="string">''</span>
+  }
+}</code></pre>
+
+<p>Again, <strong>CycleJS</strong> is just radically different. Input and output is fully contained in the <code>sources</code> and <code>sinks</code>.</p>
+<pre><code><span class="keyword">const</span> Confirm = sources=&gt; {
+  <span class="keyword">const</span> action$ = intent(sources)  
+  <span class="keyword">const</span> state$ = model(action$)
+  <span class="keyword">const</span> vtree$ = view(state$)
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    submit$: action$.filter(i =&gt; i === <span class="string">'CONFIRM'</span>)
+  }
+}
+
+<span class="function"><span class="keyword">function</span> <span class="title">SubmissionMain</span><span class="params">(sources)</span>{</span>
+  <span class="keyword">const</span> action$ = intent(sources.DOM, sources.childsinks.submit$)
+  <span class="keyword">const</span> state$ = model(action$)
+  <span class="keyword">const</span> vtree$ = view(state$, sources.childsinks.DOM)
+  <span class="keyword">return</span> {
+    DOM: vtree$,
+    disabled$: action$.map(a =&gt; a.type === <span class="string">'SUBMIT'</span> || !a.data)
+  }
+}
+<span class="keyword">const</span> Submission = withComponent(SubmissionMain,Confirm,<span class="string">'disabled$'</span>)</code></pre>
+
+<p>Although the full code for the CycleJS version is by far the longest of all versions, all communication is isolated to the component main functions. Here we see that <code>Confirm</code> component returns a <code>submit</code> stream, which through the <code>withComponent</code> call will become part of the <code>sources</code> for <code>Submission</code>. That same call also passes the returned <code>disabled</code> stream from <code>Submission</code> into the <code>sources</code> for <code>Confirm</code>.</p>
+<p><img src="../../diagrams/cyclecomm.svg" alt="cyclecomm"></p>
+<p>Finally, in <strong>Choo</strong> the communication is defined in the <code>effects</code> and <code>reducers</code> props of the <code>model</code> objects.</p>
+<pre><code><span class="keyword">const</span> Confirm = (app,confirmevent)=&gt; {
+  app.model({
+    <span class="comment">// ...other stuff trunkated...</span>
+    reducers: {
+      maybeSubmit: (action, state) =&gt; ({status: <span class="string">'confirm'</span>}),
+      cancelSubmit: (action, state) =&gt; ({status: <span class="string">'waiting'</span>})
+    },
+    effects: {
+      confirmSubmit: (action, state, send)=&gt; {
+        send(<span class="string">'confButt:cancelSubmit'</span>)
+        send(confirmevent) <span class="comment">// &lt;--- this will be catched by the parent</span>
+      }
+    }
+  })
+  <span class="keyword">return</span> (state, disabled, send) =&gt; {
+    <span class="comment">// uses `send('sub:maybeSubmit/cancelSubmit/confirmSubmit')` as clickhandlers</span>
+  }
+}
+
+<span class="keyword">const</span> Submission = app =&gt; {
+  <span class="keyword">const</span> confirm = Confirm(app,<span class="string">'sub:submit'</span>) <span class="comment">// &lt;--- telling child to trigger `sub:submit`</span>
+  app.model({
+    <span class="comment">// ...other stuff trunkated...</span>
+    reducers: {
+      setField: (action, state) =&gt; ({ field: action.payload }),
+      submit: (action, state) =&gt; ({ field: <span class="string">''</span>, submission: state.field })
+    }
+  })
+  <span class="keyword">return</span> (params, state, send) =&gt; {
+    <span class="comment">// uses `send('sub:setField') as input changehandler</span>
+  }
+}</code></pre>
+
+<p>As we noted initially, in Choo you would normally work with a single app-wide <code>app.model</code> definition, which would make things more explicit but also more tightly coupled. </p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>We hope you&#39;ve found this comparison useful! Articles like this can easily become shallow click-bait, but at the very least we learned a lot while typing it out.</p>
+<p>Looking forward, I (David) am continually smitten with CycleJS, but recognize that it is still... well, impractical, to use it for bigger things. The Choo model is intriguing - it feels like React+Redux, but somehow more explicit and clear. Angular2 feels like a clumsy React, although still way more streamlined than Angular 1. And finally, when we look at these four implementations, I find it hard to not recognize the simplicity of the React model. </p>
+<p>Mattias&#39; opinion:</p>
+<p>Having never written any CycleJS myself, the code for that implementation pretty much only made my head hurt in the same way as reading the word &#39;monad&#39; always does. That said, seeing Davids fascination with it I might have to commit some time to get into CycleJS. Other than that I can only echo Davids opinions on the other frameworks: big ol&#39; Angular2 doesn&#39;t do it for me and React is just so fresh, so clean (so fresh and so clean, clean). Choo is as previously stated a lot like a React+Redux app in the way state and communication is handled, and maybe because of this it doesn&#39;t feel as fitting as React does for the simple application implemented in this post.</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>

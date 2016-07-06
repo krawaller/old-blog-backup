@@ -42,7 +42,7 @@ const model = action$ => action$.scan((state, action)=> {
 }, '' )
 
 
-const view = (state$,confirmvtree$)=> most.combine((state,confirmvtree)=> (
+const view = (state$,confirmvtree$)=> xs.combine((state,confirmvtree)=> (
   div('.child',[
     label('Name: '),
     input('.field', {attrs: {type: 'text'}, props:{value: state}}),
