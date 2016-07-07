@@ -2,4 +2,4 @@
 title: Hannes
 type: author
 ---
-Hannes studies web programming in Oslo, focusing mostly on Angular and Ionic.
+Hannes works as a JavaScript developer for [Bekk](http://bekk.no/#Aktuelt/) in Oslo. He is also strong in prototyping and design.
