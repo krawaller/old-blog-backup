@@ -123,7 +123,7 @@ What I do lose is the advantage of having the full definition in one single plac
 
 ### Wrapping up
 
-Being able to do this is something I haven't seen in any other framework, which has enamored me with Choo even more. It truly is a cool piece of software, so try it out if you haven't already!
+Being able to encapsulate component models yet still have a central data storage is something I haven't seen in any other framework, which has enamored me with Choo even more. It truly is a cool piece of software, so try it out if you haven't already!
 
 And yes I realise I've ended other posts saying the exact same thing about CycleJS. Heck, go try both! :)
 
