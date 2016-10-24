@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Angular2 versus React, comparing components</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Some musings around the comparison, and my part in an upcoming live debate
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/angular2-versus-react-comparing-components">Angular2 versus React, comparing components</a>
+    <span class="post-meta">
+      <time datetime="Mon Oct 24 2016 02:00:00 GMT+0200 (CEST)">Oct 24th 2016</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+        <span><a href='../../tags/angular2/'>angular2</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="solid-straw-man">Solid straw man</h3>
+<p>If you&#39;re a regular reader of this blog, you&#39;ll be surprised to know that my picture is to the <em>left</em> on the flyer below:</p>
+<p><img src="../../img/angular2_vs_react.jpg" alt=""></p>
+<p>In other words, in this debate, I will be arguing on behalf of Angular2 against React! Have I been swayed by the newest kid on the block?</p>
+<p>Naaah, not really. My colleague and opponent simply called dibs on React before I had the chance. And fair enough, as I have spent the last few months building an <a href="https://edument.se/education/categories/webdevelopment/angular-2">Angular2 course</a> and could be expected to come up with a few retorts. </p>
+<p>But even though I still prefer React and will secretly wear a React t-shirt under the Angular2 t-shirt during the debate, I do recognise that there is an argument to be made for Angular2! In this post we&#39;ll take a quick look at two of them.</p>
+<h3 id="view-and-model-split-in-angular2">View and model split in Angular2</h3>
+<p>Most of what I like about Angular2 is centered around the component model. First off, I like the fact that it <em>has</em> a component model - and a composable one to boot - instead of the really weird MVC bastardisation Angular1 was pushing.</p>
+<p>I enjoy how Angular2 naturally splits the component definition between view and model:</p>
+<pre><code>@Component({
+  selector: 'clicker',
+  template: `
+    &lt;p&gt;{{<span class="command">count</span>}} bottles <span class="keyword">of</span> beer <span class="function_start"><span class="keyword">on</span></span> <span class="keyword">the</span> wall&lt;/p&gt;
+    &lt;button (click)=<span class="string">"more()"</span>&gt;Buy more&lt;/button&gt;
+  `
+})
+export <span class="type">class</span> Clicker {
+  <span class="command">count</span> = <span class="number">3</span>
+  more() {
+    this.<span class="command">count</span>++
+  }
+}</code></pre>
+
+<p>The view-related definitions are in the decorator, while the class encapsulates all model-related stuff. Elegant!</p>
+<h3 id="view-and-model-split-in-react">View and model split in React</h3>
+<p>Compare this to the React code for the same component:</p>
+<pre><code>let Clicker = React.createClass({
+  getInitialState: () =&gt; ({<span class="keyword">count</span>: <span class="number">3</span>}),
+  more () {
+    <span class="keyword">this</span>.setState({<span class="keyword">count</span>: <span class="keyword">this</span>.state.<span class="keyword">count</span> + <span class="number">1</span>})
+  },
+  render () {
+    <span class="keyword">return</span> &lt;<span class="keyword">div</span>&gt;
+      &lt;p&gt;{<span class="keyword">this</span>.state.<span class="keyword">count</span>} bottles of beer on the wall&lt;/p&gt;
+      &lt;button onClick={<span class="keyword">this</span>.more}&gt;Buy more&lt;/button&gt;
+    &lt;/<span class="keyword">div</span>&gt;
+  }
+})</code></pre>
+
+<p>You could argue that the view stuff goes into the <code>render</code> method and the model is the rest, but that doesn&#39;t always hold true. </p>
+<p>If we rephrase it using an ES6 class instead...</p>
+<pre><code><span class="class"><span class="keyword">class</span> <span class="title">Clicker</span> <span class="inheritance"><span class="keyword">extends</span></span> <span class="title">React</span>.<span class="title">Component</span> {</span>
+  constructor () {
+    <span class="keyword">super</span>()
+    <span class="keyword">this</span>.state = {<span class="keyword">count</span>: <span class="number">3</span>}
+    <span class="keyword">this</span>.more = () =&gt; <span class="keyword">this</span>.setState({<span class="keyword">count</span>: <span class="keyword">this</span>.state.<span class="keyword">count</span> + <span class="number">1</span>})
+  }
+  render () {
+    <span class="keyword">return</span> &lt;<span class="keyword">div</span>&gt;
+      &lt;p&gt;{<span class="keyword">this</span>.state.<span class="keyword">count</span>} bottles of beer on the wall&lt;/p&gt;
+      &lt;button onClick={<span class="keyword">this</span>.more}&gt;Buy more&lt;/button&gt;
+    &lt;/<span class="keyword">div</span>&gt;
+  }
+}</code></pre>
+
+<p>...you could argue that the model is defined in the <code>constructor</code>, but like before that isn&#39;t necessarily always true. Also it seems a bit unintuitive.</p>
+<h3 id="component-interface-in-angular2">Component interface in Angular2</h3>
+<p>The above is a minor point, but here is one I feel more strongly for; Angular2 components have a really clean interface.</p>
+<p>What do I mean? I&#39;d argue there are three main ways in which we interface with a component:</p>
+<ul>
+<li>we <strong>input</strong> data</li>
+<li>we provide <strong>dependencies</strong></li>
+<li>we catch <strong>output</strong></li>
+</ul>
+<p>In Angular2, these are immediately identifiable:</p>
+<pre><code>@Component({ <span class="keyword">...</span> })
+export class SceneComponent {
+  constructor(private someDependency){ <span class="keyword">...</span> }
+  @Input() someInput
+  @Output() someOutput = new EventEmitter&lt;SomeType&gt;()
+  // <span class="keyword">...</span>
+}</code></pre>
+Dependencies are constructor arguments, and inputs and outputs are literally marked as such.
+
+
+It is equally clear when we use a component - inputs are in brackets and outputs in parens:
+
+<pre><code><span class="tag">&lt;<span class="title">MyComponent</span> [<span class="attribute">someInput</span>]=<span class="value">"someVar"</span> (<span class="attribute">someOutput</span>)=<span class="value">"handler($event)"</span>&gt;</span></code></pre>
+
+<p>And the dependencies are handled by providers defined in the <code>NgModule</code> container.</p>
+<h3 id="component-interface-in-react">Component interface in React</h3>
+<p>Contrast this to React, where we simply throw everything into props. Like an <em>animal</em>!</p>
+<pre><code><span class="keyword">let</span> {someInput, someOutput, someDependency} = <span class="keyword">this</span>.props;</code></pre>
+
+<p>It is equally opaque when we use a component:</p>
+<pre><code><span class="tag">&lt;<span class="title">MyComponent</span> <span class="attribute">someInput</span>=<span class="value">{someVar}</span> <span class="attribute">someOutput</span>=<span class="value">{handler}</span> <span class="attribute">someDependency</span>=<span class="value">{someDep}</span>&gt;</span></code></pre>
+
+<p>Things become somewhat cleaner if we use <code>context</code> to handle dependencies instead of passing them in from the parent, something I only recently began experimenting with, but that&#39;s not something you see in common usage.</p>
+<h3 id="further-comparisons">Further comparisons</h3>
+<p>For more small scoped comparisons looking at single aspects of frameworks, take a sneek peak at our WIP <a href="http://blog.krawaller.se/jscomp">JavaScript framework comparison site</a>. Sort of TodoMVC, only on a much smaller and hopefully more approachable scale.</p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>Anyway, as stated initially, I still much prefer React over Angular2. Writing pseudo-JavaScript in strings? Like an <em>animal</em>? No thank you.</p>
+<p>However, learning Angular2 has definitely helped widen my perspective on JavaScript frameworks in general, and there are enough neat ideas in there to warrant exploration. If you haven&#39;t tried it, I recommend you do so!</p>
+<p>And, of course, if you happen to be in Malmö, Sweden on november 8th - likely attending the <a href="http://oredev.org/">Øredev developer conference</a> which begins the next day - do come along to <a href="https://edument.se/news/ng2-vs-react">our debate event</a>, say hello and root for your favourite!</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
