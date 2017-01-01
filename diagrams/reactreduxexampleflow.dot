@@ -1,0 +1,31 @@
+digraph {
+  rankdir = LR
+  bgcolor = transparent
+
+  subgraph cluster_component {
+    label = "component"
+    fire
+    bogus [color=transparent,fontcolor=transparent]
+    fire -> bogus [color=transparent]
+    {rank=same;fire,bogus}
+  }
+
+  fire -> aim
+
+  subgraph cluster_actioncreator {
+    label = "action creator"
+    aim
+    kill
+    aim -> kill [label="2 secs later"]
+    {rank=same;aim,kill}
+  }
+
+  subgraph cluster_reducer {
+    label = "reducer"
+    aiming [label="X aims at Y"]
+    {rank=same;aim,kill}
+  }
+
+  aim -> aiming
+
+}

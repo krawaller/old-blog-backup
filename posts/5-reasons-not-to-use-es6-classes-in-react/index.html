@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>5 reasons not to use ES6 classes in React</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Walking through some reasons to prefer `React.createClass` over ES6 classes in React
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/5-reasons-not-to-use-es6-classes-in-react">5 reasons not to use ES6 classes in React</a>
+    <span class="post-meta">
+      <time datetime="Sun Jan 01 2017 07:00:00 GMT+0700 (ICT)">Jan 1st 2017</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>In React there are three different ways to define components. The simpler ones can be pure functions, while the rest can be expressed either as ES6 classes inheriting from <code>React.Component</code>, or as calls to <code>React.createClass</code>. The official React docs make it very clear that ES6 classes is the recommended way, by introducing <code>React.createClass</code> under the demeaning headline <a href="https://facebook.github.io/react/docs/react-without-es6.html">React without ES6</a>.</p>
+<p>In other words, if you don&#39;t have a transpiler in your build step, use <code>React.createClass</code>, otherwise use ES6 classes. But I personally prefer <code>React.createClass</code> over ES6 classes even though I use all other ES6 bells and whistles!</p>
+<p>In this post I&#39;ll go over my <strong>main gripes about ES6 classes</strong>:</p>
+<ol>
+<li>Inconsistent context</li>
+<li>No mixin support</li>
+<li>Inconsistent state handling</li>
+<li>Inconsistent definition</li>
+<li>Dealing with <code>super</code></li>
+</ol>
+<p>Most of this has been covered to death in the-difference-between-ES6-classes-and-createClass style posts, but here I&#39;ll focus on why I feel that the ES6 class syntax is inferior to <code>React.createClass</code>.</p>
+<h3 id="1-inconsistent-context">1) Inconsistent context</h3>
+<p>The most common caveat to run into is likely that with ES6 classes, <em>methods aren&#39;t autobound to the instance</em>. Which means that for the <code>buyMoreBeer</code> clickhandler below to work...</p>
+<pre><code><span class="keyword">class</span> Fridge extends React.Component {
+  buyMoreBeer() {
+    <span class="keyword">this</span>.setState({beer: <span class="keyword">this</span>.state.beer + <span class="number">1</span>});
+  }
+  <span class="comment">// rest redacted</span>
+}</code></pre>
+
+<p>...we have to fix the context ourselves, like a well-behaved dog. Either by setting it in the class constructor...</p>
+<pre><code>constructor() {
+  super();
+  <span class="keyword">this</span>.buyMoreBeer = <span class="keyword">this</span>.buyMoreBeer.bind(<span class="keyword">this</span>);
+}</code></pre>
+
+<p>...or handling it in the render event hookup:</p>
+<pre><code>render() {
+  <span class="keyword">return</span> (
+    <span class="xml"><span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{(e)=</span>&gt;</span> this.buyMoreBeer(e)}&gt;Get more<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+  )
+}</span></code></pre>
+
+<p>Of course, in the heat of battle, it is very easy to forget this. And while the explanations as to why are perfectly understandable, the fact that this code...</p>
+<pre><code><span class="keyword">class</span> PeepingAtThis extends React.Component {
+  constructor() {
+    super();
+    console.log(<span class="string">"Constructor"</span>,<span class="keyword">this</span> <span class="keyword">instanceof</span> React.Component);
+  }
+  componentDidMount() {
+    console.log(<span class="string">"componentDidMount"</span>,<span class="keyword">this</span> <span class="keyword">instanceof</span> React.Component);
+  }
+  handleClick() {
+    console.log(<span class="string">"handleClick"</span>,<span class="keyword">this</span> <span class="keyword">instanceof</span> React.Component);
+  }
+  render() {
+    console.log(<span class="string">"Render"</span>,<span class="keyword">this</span> <span class="keyword">instanceof</span> React.Component);
+    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{this.handleClick}</span>&gt;</span>Click!<span class="tag">&lt;/<span class="title">button</span>&gt;</span>;</span>
+  }
+}</code></pre>
+
+<p>...yields this output...</p>
+<p><img src="../../img/reactes6this.png" alt=""></p>
+<p>...just isn&#39;t very elegant.</p>
+<p>The <a href="https://facebook.github.io/react/docs/react-without-es6.html#autobinding">React docs</a> themselves say that</p>
+<blockquote>
+<p>This means writing ES6 classes comes with a little more boilerplate code for event handlers, but the upside is slightly better performance in large applications.</p>
+</blockquote>
+<p>Maybe I&#39;m being naïve, but surely that slight performance benefit only matters in a few edge-case applications, meaning the boilerplate-for-speed trade is a loss for everyone else?</p>
+<h3 id="2-no-mixin-support">2) No mixin support</h3>
+<p>The venerable <code>React.createClass</code> helper has a <code>mixins</code> API which lets us share objects of predefined functionality between components. Commonly a mixin will be provided by a 3rd party library to help interaction with React, such as the <a href="https://github.com/firebase/reactfire">ReactFireMixin</a> to connect a React component to <a href="https://firebase.google.com/">Firebase</a>.</p>
+<pre><code>React.createClass({
+  mixins: [ReactFireMixin],
+  <span class="comment">// rest redacted</span>
+})</code></pre>
+
+<p>The reason for having a special API and not just simply mix objects together is that both the mixin and the component might need to define the same lifecycle methods, in which case the mixin API will take care of wrapping those and making things work.</p>
+<p>However, <strong>ES6 classes cannot use mixins</strong>. Which in many cases means that you&#39;re out of luck, have to dig under the hood of the mixin and recreate the functionality yourself.</p>
+<p>Or the mixin author might have made a new version in the form of a class instead, like React themselves did with the <a href="https://facebook.github.io/react/docs/pure-render-mixin.html">PureRenderMixin</a> which implements a good default for <code>shouldComponentUpdate</code>. This mixin is now instead available as a <a href="https://facebook.github.io/react/docs/react-component.html">PureComponent</a> base class:</p>
+<pre><code><span class="keyword">class</span> WhatAmI extends React.PureComponent {
+  render() {
+    console.log(<span class="string">"Is pure"</span>, <span class="keyword">this</span> <span class="keyword">instanceof</span> React.PureComponent)
+    console.log(<span class="string">"Is component"</span>, <span class="keyword">this</span> <span class="keyword">instanceof</span> React.Component)
+    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span>Just testing<span class="tag">&lt;/<span class="title">div</span>&gt;</span>;</span>
+  }
+}</code></pre>
+
+<p>...which of course in turn inherits from <code>React.Component</code>:</p>
+<p><img src="../../img/es6inherit.png" alt=""></p>
+<p>But, to my mind, inheritance is a vastly inferior model. Let&#39;s say that there was now a base class version of <code>ReactFireMixin</code> (which there isn&#39;t). How would you go about using that <strong>and</strong> <code>PureComponent</code> at the same time? You can&#39;t! While with <code>React.createClass</code>, no problem:</p>
+<pre><code>React.createClass({
+  mixins: [ReactFireMixin,PureRenderMixin],
+  <span class="comment">// rest redacted</span>
+})</code></pre>
+
+<p>Yes, I&#39;m aware that mixins as a pattern aren&#39;t all that useful and <a href="https://facebook.github.io/react/blog/2016/07/13/mixins-considered-harmful.html">can even be harmful</a>. But I would argue that there are situations where they make sense, and in those situations they blow base classes out of the water.</p>
+<h3 id="3-inconsistent-state-handling">3) Inconsistent state handling</h3>
+<p>In old React code there is an easy adage to live by regarding state:</p>
+<blockquote>
+<p>Never ever mutate <code>this.state</code> directly!</p>
+</blockquote>
+<p>We provide inital state through the <code>getInitialState</code> method, and <code>setState</code> calls cause subsequent updates. We can use <code>this.state.someKey</code> to query our state, but we will never ever mutate <code>this.state</code> directly.</p>
+<p>ES6 classes break this because reasons. Now we provide initial state by assigning it inside the constructor instead:</p>
+<pre><code><span class="function"><span class="keyword">constructor</span><span class="params">()</span><span class="comment">{
+  super();
+  this.state = {beer: 3}</span>;</span>
+}</code></pre>
+
+<p>...giving us a far less elegant adage:</p>
+<blockquote>
+<p>Never ever mutate <code>this.state</code> directly! ...except for in the constructor.</p>
+</blockquote>
+<h3 id="4-inconsistent-definition">4) Inconsistent definition</h3>
+<p><code>React.createClass</code> is called with a single definition object. Many keys in that object will have some special meaning to React, while some will just be event handlers. Together they make up the entire class definition, in what is in my mind a very coherent way.</p>
+<p>The ES6 classes are far less consistent. Most of the definition object keys end up as corresponding keys in the class definition, but not all! Some wind up inside the constructor, and some as props on the class <em>object</em>, because reasons.</p>
+<p>Here is a simple definition object where each key is annotated with where they would end up in an ES6 version:</p>
+<pre><code><span class="keyword">let</span> Fridge = React.createClass({
+  propTypes: { <span class="comment">// class object property</span>
+    brand: React.PropTypes.string
+  },
+  defaultProps: { <span class="comment">// class object property</span>
+    brand: <span class="string">"beer"</span>
+  },
+  getInitialState(){ <span class="comment">// inside constructor</span>
+    <span class="keyword">return</span> {count:<span class="number">3</span>};
+  },
+  componentWillMount(){ <span class="comment">// inside constructor OR class definition key</span>
+    console.log(<span class="string">"Plugging in fridge"</span>);
+  },
+  buyMoreBeer(){ <span class="comment">// class definition key</span>
+    <span class="keyword">this</span>.setState({count: <span class="keyword">this</span>.state.count+<span class="number">1</span>});
+  },
+  render() { <span class="comment">// class definition key</span>
+    <span class="keyword">return</span> (
+      <span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">p</span>&gt;</span>{this.state.count} bottles of {this.props.brand} on the wall!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{this.buyMore}</span>&gt;</span>Buy more<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+      <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    );
+  }
+})</span></code></pre>
+
+<p>Translated to an ES6 class, here&#39;s what we get:</p>
+<pre><code><span class="keyword">class</span> Fridge extends React.Component {
+  constructor(){
+    super();
+    console.log(<span class="string">"Plugging in fridge"</span>);
+    <span class="keyword">this</span>.state = {count:<span class="number">3</span>};
+  }
+  buyMoreBeer(){
+    <span class="keyword">this</span>.setState({count: <span class="keyword">this</span>.state.count+<span class="number">1</span>});
+  }
+  render() {
+    <span class="keyword">return</span> (
+      <span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">p</span>&gt;</span>{this.state.count} bottles of {this.props.brand} on the wall!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+        <span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{this.buyMore}</span>&gt;</span>Buy more<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+      <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+    );
+  }
+}
+
+Fridge.propTypes = {
+  brand: React.PropTypes.string
+};
+
+Fridge.defaultProps = {
+  brand: "beer"
+};</span></code></pre>
+
+<p>This looks remarkably similar to the first-create-a-constructor-then-attach-stuff-to-the-prototype dance that the class syntax is meant to abstract away in the first place! And which Douglas Crockford referred to as having stuff dangling out of the pants. It sure aint pretty.</p>
+<p>So why is <code>propTypes</code> and <code>defaultProps</code> not part of the class definition? It is because with the current setup,</p>
+<blockquote>
+<p><a href="https://github.com/facebook/react/issues/3725#issuecomment-256671188">an optimizing compiler could inline it at the call site</a>.</p>
+</blockquote>
+<p>So again a compromise for the sake of a small, <em>potential</em> performance gain.</p>
+<p>Yes, sure, learning what goes where in the class definition is easy enough. But I don&#39;t want to have to learn it at all!</p>
+<p>Also: class definitions are to objects what <code>arguments</code> objects are to arrays - they sort of look the same, but lack much of the power and flexibility. And while employing advanced gymnastics on the definition object fed to <code>React.createClass</code> isn&#39;t something you&#39;d normally do, why give up the power to be able to?</p>
+<h3 id="5-dealing-with-super-">5) Dealing with <code>super</code></h3>
+<p>If we&#39;re using a constructor in our component - and we very likely need to unless the component is stupidly simple (at which point it&#39;s probably better off as a pure function) - then we must remember to call <code>super</code>, like a well-behaved dog. </p>
+<pre><code><span class="function"><span class="keyword">constructor</span><span class="params">()</span><span class="comment">{
+  super();
+  this.state = {beer: 3}</span>;</span>
+}</code></pre>
+
+<p>The <code>super</code> call invokes the same function in the parent class, in this case the <code>constructor</code> of <code>React.Component</code>. Failure to invoke <code>super</code> in a child constructor throws an error, so if you forget then everything will come crashing down.</p>
+<p>At this point you might wonder - <a href="http://stackoverflow.com/questions/37144920/es6-super-required-in-constructor">why isn&#39;t super called automatically</a>? The <a href="http://stackoverflow.com/a/37145001">answer</a> is that it might matter exactly <em>where</em> in the constructor we make that call, so any autocalling mechanism would be inherently limiting to the class syntax.</p>
+<p>Which makes sense but also sucks a bit, because in most cases it doesn&#39;t matter where the call is made. In general people tend to just stick the <code>super</code> call up top - in fact this is so common that there&#39;s even a <a href="http://eslint.org/docs/rules/no-this-before-super">linting rule not to reference <code>this</code> before calling super</a>, to be entirely sure that your manipulations aren&#39;t garbled by the parent.</p>
+<p>To complicate matters further we might have to demean ourselves further by <a href="http://cheng.logdown.com/posts/2016/03/26/683329">passing along <code>props</code> and <code>context</code></a>, if we want these to be available on <code>this</code> inside the <code>constructor</code>.</p>
+<p>All this adds up to a very raw feel - exactly the kind of stuff you&#39;d expect to deal with when <em>not</em> using a library. </p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>While I don&#39;t feel particularly strongly about any of the points made above, together they make me vastly prefer <code>React.createClass</code> over ES6 classes. Maybe there&#39;ll come a day when I&#39;m forced to adopt classes because the performance gain is significant, but I have yet to live it. Until then, I&#39;ll keep using <code>React.createClass</code>.</p>
+<p>Dan Abramov, not particularly fond of either syntax, wrote that</p>
+<blockquote>
+<p><a href="https://news.ycombinator.com/item?id=12149053">We don&#39;t like classes, but we don&#39;t like &quot;pseudo classes&quot; (createClass) even more. Better the devil that&#39;s standardized.</a></p>
+</blockquote>
+<p>I disagree, and besides, objects are standardized too! :)</p>
+<p>If we absolutely must use classes, then I find Angular 2&#39;s model of utilising decorators instead of inheritance to feel much nicer.</p>
+<p>Of course it is always preferrable not to have complex components at all, and instead be able to express them as simple functions! Every instance where you&#39;re unable to make the component pure should feel like a battle lost. </p>
+<h3 id="ps">PS</h3>
+<p>By using <a href="https://github.com/acdlite/recompose">Recompose</a> we can turn some of those lost battles into wins, for example by turning this...</p>
+<pre><code><span class="keyword">let</span> Clicker = React.createClass({
+  getInitialState: () =&gt; ({count: <span class="number">3</span>}),
+  more () {
+    <span class="keyword">this</span>.setState({count: <span class="keyword">this</span>.state.count + <span class="number">1</span>})
+  },
+  render () {
+    <span class="keyword">return</span> <span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+      <span class="tag">&lt;<span class="title">p</span>&gt;</span>{this.state.count} bottles of beer on the wall<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+      <span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{this.more}</span>&gt;</span>Buy more<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+    <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+  }
+})</span></code></pre>
+
+<p>...into this:</p>
+<pre><code><span class="keyword">const</span> enhance = withState(<span class="string">'count'</span>, <span class="string">'more'</span>, <span class="number">3</span>)
+<span class="keyword">const</span> Clicker = Recompose.enhance(({count, more}) =&gt; (
+  <span class="xml"><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>{count} bottles of beer on the wall<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">button</span> <span class="attribute">onClick</span>=<span class="value">{()</span> =&gt;</span> more(n =&gt; n + 1)}&gt;Buy more<span class="tag">&lt;/<span class="title">button</span>&gt;</span>
+  <span class="tag">&lt;/<span class="title">div</span>&gt;</span>
+))</span></code></pre>
+
+<p>But in general I find that the lost readability is too high a price to pay. Even though you do get used to the pattern soon enough, it just isn&#39;t worth the gripe from your coworkers and your future self. Although you do feel clever writing the code!</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
