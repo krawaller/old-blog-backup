@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A React-Redux example followup</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Following up on our React-Redux example, discussing what logic goes where
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/a-react-redux-example-followup">A React-Redux example followup</a>
+    <span class="post-meta">
+      <time datetime="Fri Jan 06 2017 07:00:00 GMT+0700 (ICT)">Jan 6th 2017</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+        <span><a href='../../tags/redux/'>redux</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>In October 2015 we posted <a href="../a-react-redux-example-app/">A React-Redux example app</a>, still one of the most-read posts on this blog. Which, as is always the case when old code is scrutinized, feels increasingly embarrassing.</p>
+<p>Even more so when Samuel Bleckley wrote a <a href="http://blog.krawaller.se/posts/a-react-redux-example-app/#comment-3035129301">comment pointing out a pretty severe bug</a> in the example app! This blog post explains the bug and solves it, giving us a good excuse to discuss where to put logic in a Redux app:</p>
+<ol>
+<li>In the view?</li>
+<li>In the action creator?</li>
+<li>In the reducer?</li>
+<li>Somewhere else entirely?</li>
+</ol>
+<h3 id="reacquainting-ourselves-with-the-example">Reacquainting ourselves with the example</h3>
+<p>The <a href="https://github.com/krawaller/riastart2015">old source code</a> is running in the iframe below (you can also access it directly at <a href="http://blog.krawaller.se/riastart2015/">http://blog.krawaller.se/riastart2015/</a>).</p>
+<iframe src="http://blog.krawaller.se/riastart2015/" style="height:500px;width:100%"></iframe>
+
+<p>You&#39;re assumed to have read <a href="a-react-redux-example-app/">the old blog post</a>, but here&#39;s a whirlwind recap. The app state has two parts to it:</p>
+<ul>
+<li><code>heroes</code> holds persistent information for each hero, such as number of kills total</li>
+<li><code>battlefield</code> holds the state of the currently ongoing battle</li>
+</ul>
+<p>As usual with Redux, each of these top-level keys has a reducer of its own, thus we have a <code>heroesReducer</code> and a <code>battlefieldReducer</code>.</p>
+<p>You can see this more clearly by peeking at the <a href="https://github.com/krawaller/riastart2015/blob/gh-pages/src/initialstate.js">old initial state</a> code:</p>
+<pre><code>module.exports = <span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+  <span class="keyword">return</span> {
+    <span class="comment">// "persistent" data on heroes</span>
+    heroes: {
+      batman: {
+        quote: <span class="string">"I'm batman."</span>,
+        kills: <span class="number">0</span>
+      },
+      superman: {
+        quote: <span class="string">"I can fly!"</span>,
+        kills: <span class="number">0</span>
+      },
+      spiderman: {
+        quote: <span class="string">"Why don't you love me, Lois?"</span>,
+        kills: <span class="number">0</span>
+      },
+      <span class="string">"he-man"</span>: {
+        quote: <span class="string">"By the power of Grayskull!"</span>,
+        kills: <span class="number">0</span>
+      }
+    },
+    <span class="comment">// data on the current battle</span>
+    battlefield: {
+      doing: {batman:C.WAITING,superman:C.WAITING,spiderman:C.WAITING,<span class="string">"he-man"</span>:C.WAITING},
+      standing: <span class="number">4</span>,
+      log: [<span class="string">"Ready.... fight!"</span>]
+    }
+  };
+};</code></pre>
+
+<p>To see the persistent stats for a particular hero, simply click his name:</p>
+<p><img src="../../img/reduxexampleherodetail.gif" alt=""></p>
+<h3 id="the-bug">The bug</h3>
+<p>The bug that Samuel Bleckley found is the embarrassing fact that kills are recorded even for shots that fail to take out their target. This happens if</p>
+<ul>
+<li>the target is ducking</li>
+<li>the target was killed by someone else first</li>
+<li>the shooter got taken out while aiming</li>
+</ul>
+<p>Here you can see it in action - After the 2 second aiming period Batman gets a kill recorded even though Superman is ducking:</p>
+<p><img src="../../img/reactreduxexamplebug.gif" alt=""></p>
+<p>The explanation as to why this happens is pretty straightforward. Here is the <a href="https://github.com/krawaller/riastart2015/blob/gh-pages/src/actions.js#L24-L32">action creator</a> that is called when we click a kill button:</p>
+<pre><code>aimAt: <span class="function"><span class="keyword">function</span><span class="params">(killer,victim)</span>{</span>
+  <span class="keyword">return</span> <span class="function"><span class="keyword">function</span><span class="params">(dispatch,getState)</span>{</span>
+    dispatch({type:constants.AIM_AT,killer:killer,victim:victim});
+    setTimeout(<span class="function"><span class="keyword">function</span><span class="params">()</span>{</span>
+      dispatch({type:constants.KILL_HERO,killer:killer,victim:victim});
+    },<span class="number">2000</span>);
+  };
+}</code></pre>
+
+<p>It synchronously dispatches <code>AIM_AT</code>, and then 2 seconds later, <code>KILL_HERO</code>. The effect of <code>KILL_HERO</code> is calculated in the <a href="https://github.com/krawaller/riastart2015/blob/gh-pages/src/reducers/battlefield.js#L26-L52"><code>battlefieldReducer</code></a>:</p>
+<pre><code><span class="keyword">case</span> C.KILL_HERO:
+  <span class="keyword">if</span> (state.doing[action.killer] === C.DEAD){
+    newstate.log.push(<span class="string">"The trigger finger twitches on "</span>+action.killer+<span class="string">"'s corpse"</span>);
+  } <span class="keyword">else</span> {
+    newstate.doing[action.killer] = C.WAITING; <span class="comment">// whatever happens we should no longer be aiming</span>
+    <span class="comment">// the target is ducking</span>
+    <span class="keyword">if</span> (state.doing[action.victim] === C.DUCKING) {
+      newstate.log.push(action.victim+<span class="string">" dodges a blast from "</span>+action.killer+<span class="string">"!"</span>);
+    <span class="comment">// the target has already been killed</span>
+    } <span class="keyword">else</span> <span class="keyword">if</span> (state.doing[action.victim] === C.DEAD) {
+      newstate.log.push(action.killer+<span class="string">" blasts "</span>+action.victim+<span class="string">"'s corpse."</span>);
+    <span class="comment">// we kill the target!</span>
+    } <span class="keyword">else</span> {
+      <span class="keyword">if</span> (state.doing[action.victim]===C.AIMING){
+        newstate.log.push(action.killer+<span class="string">" killed "</span>+action.victim+<span class="string">" before he got his shot off!"</span>);
+      } <span class="keyword">else</span> {
+        newstate.log.push(action.killer+<span class="string">" killed "</span>+action.victim+<span class="string">"!"</span>);
+      }
+      newstate.doing[action.victim] = C.DEAD;
+      newstate.standing = newstate.standing - <span class="number">1</span>;
+      <span class="keyword">if</span> (newstate.standing === <span class="number">1</span>){
+        newstate.log.push(action.killer+<span class="string">" WINS!!"</span>);
+      }
+    }
+  }
+<span class="keyword">return</span> newstate;</code></pre>
+
+<p>Zooming out, here&#39;s a map of the logic happening when we fire:</p>
+<p><img src="../../diagrams/reactreduxexampleflow.svg" alt=""></p>
+<p>But since we branch between a valid kill and a spam message inside <code>battlefieldReducer</code>, there&#39;s no way for anyone else to distinguish between a kill and an attempted kill!</p>
+<p>And this is our problem. The <a href="https://github.com/krawaller/riastart2015/blob/gh-pages/src/reducers/heroes.js"><code>heroesReducer</code></a> simply listens for the <code>KILL_HERO</code> action to register a kill:</p>
+<pre><code><span class="keyword">var</span> newstate = <span class="built_in">Object</span>.assign({},state);
+<span class="keyword">switch</span>(action.type){
+  <span class="keyword">case</span> constants.KILL_HERO:
+    newstate[action.killer].kills += <span class="number">1</span>;
+    <span class="keyword">return</span> newstate;
+  <span class="keyword">default</span>: <span class="keyword">return</span> state || initialState().heroes;
+}</code></pre>
+
+<p>Initially there was no <code>AIM_AT</code> and no ducking - when you clicked kill, you instakilled your target. At that point in time, everything worked as expected. Then I added the 2-second aiming period and ducking, essentially <em>changing the meaning of the <code>KILL_HERO</code> action to <code>MAYBE_KILL</code></em>.</p>
+<p>With the current setup, there isn&#39;t really a simple way to solve this! The <code>heroesReducer</code> only cares about actual kills, but cannot easily differentiate those since the branching is done inside the <code>battlefieldReducer</code>.</p>
+<h3 id="solving-the-problem">Solving the problem</h3>
+<p>Here&#39;s a fixed version of the app! Note how failed shots won&#39;t register as kills here.</p>
+<iframe src="http://blog.krawaller.se/reactreduxexamplev2/" style="height:500px;width:100%"></iframe>
+
+<p>The new source code - which, apart from the bug fix, also has updated dependencies, an ES6 makeover and some reorganisation - is available at <a href="https://github.com/krawaller/reactreduxexamplev2">https://github.com/krawaller/reactreduxexamplev2</a>.</p>
+<p>We squashed the bug by updating the <a href="https://github.com/krawaller/reactreduxexamplev2/blob/gh-pages/src/actions.js#L25-L51">action creator</a>, making it host the main branching logic:</p>
+<pre><code><span class="keyword">if</span> (state.doing[killer] === C.DEAD){
+  dispatch({type:C.TWITCH_FINGER, who: killer});
+} <span class="keyword">else</span> {
+  <span class="comment">// the target is ducking</span>
+  <span class="keyword">if</span> (state.doing[victim] === C.DUCKING) {
+    dispatch({type:C.MISS_SHOT, killer, victim});
+  <span class="comment">// the target has already been killed</span>
+  } <span class="keyword">else</span> <span class="keyword">if</span> (state.doing[victim] === C.DEAD) {
+    dispatch({type:C.BLAST_CORPSE, killer, victim});
+  <span class="comment">// we kill the target!</span>
+  } <span class="keyword">else</span> {
+    dispatch({type:C.KILL_HERO,killer,victim});
+  }
+}</code></pre>
+
+<p>The <code>battlefieldReducer</code> has corresponding <a href="https://github.com/krawaller/reactreduxexamplev2/blob/gh-pages/src/store/reducers/battlefield.js#L29-L39">new action cases</a>...</p>
+<pre><code><span class="keyword">case</span> C.TWITCH_FINGER:
+  newstate.log.push(<span class="string">"The trigger finger twitches on "</span>+action.who+<span class="string">"'s corpse"</span>);
+  <span class="keyword">return</span> newstate;
+<span class="keyword">case</span> C.MISS_SHOT:
+  newstate.doing[action.killer] = C.WAITING;
+  newstate.log.push(action.victim+<span class="string">" dodges a blast from "</span>+action.killer+<span class="string">"!"</span>);
+  <span class="keyword">return</span> newstate;
+<span class="keyword">case</span> C.BLAST_CORPSE:
+  newstate.doing[action.killer] = C.WAITING;
+  newstate.log.push(action.killer+<span class="string">" blasts "</span>+action.victim+<span class="string">"'s corpse."</span>);
+  <span class="keyword">return</span> newstate;</code></pre>
+
+<p>...and an <a href="https://github.com/krawaller/reactreduxexamplev2/blob/gh-pages/src/store/reducers/battlefield.js#L40-L52">updated <code>KILL_HERO</code> case</a>:</p>
+<pre><code><span class="keyword">case</span> C.KILL_HERO:
+  <span class="keyword">if</span> (state.doing[action.victim]===C.AIMING){
+    newstate.log.push(action.killer+<span class="string">" killed "</span>+action.victim+<span class="string">" before he got his shot off!"</span>);
+  } <span class="keyword">else</span> {
+    newstate.log.push(action.killer+<span class="string">" killed "</span>+action.victim+<span class="string">"!"</span>);
+  }
+  newstate.doing[action.victim] = C.DEAD;
+  newstate.doing[action.killer] = C.WAITING;
+  newstate.standing = newstate.standing - <span class="number">1</span>;
+  <span class="keyword">if</span> (newstate.standing === <span class="number">1</span>){
+    newstate.log.push(action.killer+<span class="string">" WINS!!"</span>);
+  }
+  <span class="keyword">return</span> newstate;</code></pre>
+
+<p>Now <code>KILL_HERO</code> actually means what it says again.</p>
+<h3 id="discussing-our-options">Discussing our options</h3>
+<p>Looking again at our four options for placing logic in Redux:</p>
+<ol>
+<li>In the view?</li>
+<li>In the action creator?</li>
+<li>In the reducer?</li>
+<li>Somewhere else entirely?</li>
+</ol>
+<p>Option 1 is almost always wrong. We want to keep our views simple and as decoupled from the business logic as possible. You should be able to switch framework without doing any business logic reworkings at all!</p>
+<p>Option 2 is often right, especially when you aren&#39;t sure. Don&#39;t be afraid to have fat action creators and small reducers! See the sum of them as your business logic. I saw a quote which I cannot find now, but which said that</p>
+<blockquote>
+<p>You should be able to fully understand an app by looking at its [Redux] reducers.</p>
+</blockquote>
+<p>I disagree - the quote should be</p>
+<blockquote>
+<p>You should be able to fully understand an app by looking at its [Redux] reducers and action creators.</p>
+</blockquote>
+<p>In the case of my little example app, option 3 was wrong for the shot consequence calculation. Because a reducer cared about the goings-on inside another reducer I had painted myself into a corner.</p>
+<p>What about option 4? Recently I made a web version of the print &amp; play demo of the board game <a href="https://boardgamegeek.com/boardgame/201921/tiny-epic-quest">Tiny Epic Quest</a>, to support its <a href="https://www.kickstarter.com/projects/coe/tiny-epic-quest-introducing-itemeeplestm/">Kickstarter campaign</a>. Here you can see the web app in action:</p>
+<p><img src="../../img/teqdemo.gif" alt=""></p>
+<p>Each player commands a group of adventurers that roam around the map, solve quests, gain items, adventure into temples, battle goblins, etc. You can probably imagine that the business logic for this is very complex!</p>
+<p>Before I sat out, I naturally expected the Redux parts of my app to be very heavy. Yet here is my entire <code>battleReducer</code>:</p>
+<pre><code><span class="function"><span class="keyword">function</span> <span class="title">battleReducer</span><span class="params">(currentstate,action)</span>{</span>
+  <span class="keyword">let</span> newstate = augmentBattle(cloneDeep(currentstate || initialState.battle))
+  <span class="keyword">switch</span>(action.type){
+    <span class="keyword">case</span> C.START_GAME: <span class="keyword">return</span> console.log(<span class="string">'act'</span>,action) || goToMode(startBattle(action.seating, action.layout, action.startingQuests),C.MODE_GENERATE_BOARD)
+    <span class="keyword">case</span> C.SELECT_TRAVEL: <span class="keyword">return</span> makeChoice(newstate, <span class="string">'travel'</span>, action.travel)
+    <span class="keyword">case</span> C.SELECT_UNIT: <span class="keyword">return</span> makeChoice(newstate, <span class="string">'unit'</span>, action.unit)
+    <span class="keyword">case</span> C.SELECT_SECTION: <span class="keyword">return</span> makeChoice(newstate, <span class="string">'section'</span>, action.section)
+    <span class="keyword">case</span> C.SELECT_GOBLIN: <span class="keyword">return</span> makeChoice(newstate, <span class="string">'goblin'</span>, action.goblin)
+    <span class="keyword">case</span> C.SELECT_QUEST: <span class="keyword">return</span> makeChoice(newstate, <span class="string">'quest'</span>, action.quest)
+    <span class="keyword">case</span> C.SELECT_COMMAND: <span class="keyword">return</span> newstate.commands[action.command].effect(newstate,action.arg)
+    <span class="keyword">default</span>: <span class="keyword">return</span> newstate;
+  }
+};</code></pre>
+
+<p>As you might gather, the actions correspond to interactions with the UI - this is a list of all the different categories of items that a user can click on. Which also means that the action creators are similarly simple. So, then, where is the logic?</p>
+<p>It lives in a gargantuan object of &quot;modes&quot;. Each mode is a specific point in the game, and defines what input it requires, what commands are available and what happens when they are called. As an example, here&#39;s the mode for when we&#39;ve visited a mushroom village to get some help battling goblins:</p>
+<pre><code>[C.MODE_VILLAGE_HIT2]: {
+  setup: b=&gt; {
+    <span class="keyword">if</span> (!<span class="built_in">Object</span>.keys(activeGoblinTargets(b)).length){
+      <span class="keyword">return</span> goToMode(b,C.MODE_CHECK_QUESTS)
+    }
+    <span class="keyword">return</span> b
+  },
+  instruction: b=&gt; <span class="string">"Deal 2 dmg to a goblin one of your heroes are fighting!"</span>,
+  options: {
+    goblin: activeGoblinTargets
+  },
+  commands: (b)=&gt; ({
+    hit: {
+      available: b=&gt; b.choices.goblin,
+      effect: b=&gt; {
+        b = pokeGoblin(b)
+        <span class="keyword">return</span> goToMode(b,C.MODE_CHECK_QUESTS)
+      }
+    },
+    skip: {
+      effect: b=&gt; goToMode(b,C.MODE_CHECK_QUESTS)
+    }
+  })
+}</code></pre>
+
+<p>In other words, the business logic is spearated not just from the views (React), but also from the data layer (Redux)! In a bout of nostalgia I could switch out Redux for Reflux, and I wouldn&#39;t have to touch my business code.</p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>Now, I&#39;m not saying that option 4 rulez all, and that you should go forth to separate the business logic from Redux like this. But there are times when it has merits, and I think there is value just in realising that there <em>are</em> 4 options and not just 3!</p>
+<p>And, again - don&#39;t be afraid of fat action creators!</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>

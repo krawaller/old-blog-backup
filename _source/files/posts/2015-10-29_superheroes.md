@@ -7,6 +7,8 @@ excerpt: "Dissecting a small React-Redux example application"
 type: post
 ---
 
+<span style="color:red;">**Note**: This example app has a bug due to bad flow design. See the explanation and the solution in [this follow-up post](../a-react-redux-example-followup)!</span>
+
 ###The Superhero battler app
 
 This post presents a simple React-Redux example app. The aim was to have a small example to complement the official Redux ones, that is also more portable. It uses React, Redux, React-Router, React-Redux and browserify. And (almost) no ES6 syntax.
