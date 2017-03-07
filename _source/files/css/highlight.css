@@ -45,5 +45,11 @@ pre code {
   line-height: 1.5;
   border: 1px solid #ccc;
   padding: 10px;
-  font-size: 0.9em;
+  font-size: 0.75em;
+}
+
+:not(pre) > code {
+    background-color: bisque;
+    padding: 2px;
+    border-radius: 5px;
 }
