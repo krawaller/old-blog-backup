@@ -360,7 +360,7 @@ We hope this journey has been educational, and that `@`, `<`, `=` and `&` now fe
 
 And that you noticed how `<` kicks the ass of the rest! It can do everything, which also `=` can, but `<` looks much better doing it.
 
-![](../../img/angularjschart.png)
+<img src="../../img/angularjschart.png" style="margin-left: 2em; max-width: 400px;">
 
 Both are somewhat clumsy for reading strings (`<` requires a string in a string, and `=` needs a proxy variable), but that's easy enough to do vanilla so `@` shouldn't get too cocky.
 
