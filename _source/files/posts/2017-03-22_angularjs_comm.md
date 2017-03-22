@@ -1,7 +1,7 @@
 ---
 type: post
 title: "Dissecting @ < & = in AngularJS"
-date: 2017-03-20
+date: 2017-03-22
 tags: [angularjs]
 author: David
 excerpt: Exploring how @ < & = really work in AngularJS directives/components, and realising how < rules them all
