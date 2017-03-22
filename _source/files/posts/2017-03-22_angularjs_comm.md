@@ -1,6 +1,6 @@
 ---
 type: post
-title: "Dissecting @ < & = in AngularJS"
+title: "Dissecting @ < & = bindings in AngularJS"
 date: 2017-03-22
 tags: [angularjs]
 author: David
