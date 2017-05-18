@@ -268,15 +268,19 @@ type builderObject&lt;TState&gt; = {
 <pre><code><span class="attribute">const store: Store&lt;AppState&gt; </span>=<span class="string"> applyMiddleware(thunk, logger)(createStore)(reducer, initialState);</span></code></pre>
 
 <p>But since that&#39;s only ever done once, that isn&#39;t really an issue.</p>
-<p>Same goes for middlewares - if you want typings, a quick way is to type the top-level API object as a store:</p>
-<pre><code><span class="reserved">const</span> <span class="function"><span class="title">logger</span> = <span class="params">(store: Store&lt;AppState&gt;)</span> =&gt;</span> next<span class="function"> =&gt;</span> action<span class="function"> =&gt;</span> {
+<p>As for the middlewares themselves, Redux has a <code>MiddlewareAPI&lt;S&gt;</code> typing. So with a tiny app-specific helper type...</p>
+<pre><code><span class="keyword">type</span> <span class="title">API</span> = MiddlewareAPI&lt;AppState&gt;;</code></pre>
+
+<p>...we can type the middlewares:</p>
+<pre><code><span class="reserved">import</span> {  }
+<span class="reserved">const</span> <span class="function"><span class="title">logger</span> = <span class="params">(api: API)</span> =&gt;</span> next<span class="function"> =&gt;</span> action<span class="function"> =&gt;</span> {
   <span class="built_in">console</span>.log(<span class="string">'dispatching'</span>, action.type, action);
   <span class="reserved">let</span> result = next(action);
-  <span class="built_in">console</span>.log(<span class="string">'next state'</span>, store.getState());
+  <span class="built_in">console</span>.log(<span class="string">'next state'</span>, api.getState());
   <span class="keyword">return</span> result;
 };</code></pre>
 
-<p>Not entirely truthful, but functional nonetheless.</p>
+
 <h3 id="wrapping-up">Wrapping up</h3>
 <p>I&#39;m pretty happy with this setup - not much typings necessary, but I still get full TypeScript support throughout.</p>
 <p>There are some itches I&#39;d like to scratch further. For example, having to feed the action creator argument types up top to <code>createAction</code> is a bit iffy:</p>
@@ -291,6 +295,10 @@ type builderObject&lt;TState&gt; = {
 
 <p>This should be doable, I need to explore further.</p>
 <p>Also I&#39;m looking at exposing the actions on the store instance instead of having a <code>dispatch</code> function and a separate <code>action</code> object. Why let the user ever dispatch anything except what is born from an action creator?</p>
+<p>Finally the <code>Middleware</code> typings are lacking. I&#39;d like to do something like this up top:</p>
+<pre><code>const logger: Middleware&lt;AppState&gt; = // <span class="keyword">...</span></code></pre>
+
+<p>...and just have everything below it, including <code>next</code> and <code>action</code>, be correctly inferred. But as middlewares are few and one-off, setting that up isn&#39;t really a priority.</p>
 <p>Anyhow - I hope this setup is of use to you too, and if you have any feedback, please do comment or reach out! </p>
 <p>And as initially stated, I&#39;ll detail the React parts of my setup in an upcoming post.</p>
 

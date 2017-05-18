@@ -286,18 +286,23 @@ const store: Store<AppState> = applyMiddleware(thunk, logger)(createStore)(reduc
 
 But since that's only ever done once, that isn't really an issue.
 
-Same goes for middlewares - if you want typings, a quick way is to type the top-level API object as a store:
+As for the middlewares themselves, Redux has a `MiddlewareAPI<S>` typing. So with a tiny app-specific helper type...
 
 ```
-const logger = (store: Store<AppState>) => next => action => {
+type API = MiddlewareAPI<AppState>;
+```
+
+...we can type the middlewares:
+
+```
+import {  }
+const logger = (api: API) => next => action => {
   console.log('dispatching', action.type, action);
   let result = next(action);
-  console.log('next state', store.getState());
+  console.log('next state', api.getState());
   return result;
 };
 ```
-
-Not entirely truthful, but functional nonetheless.
 
 
 ### Wrapping up
@@ -323,6 +328,14 @@ const addUIMessage = createAction<addUIMessagePayload>(
 This should be doable, I need to explore further.
 
 Also I'm looking at exposing the actions on the store instance instead of having a `dispatch` function and a separate `action` object. Why let the user ever dispatch anything except what is born from an action creator?
+
+Finally the `Middleware` typings are lacking. I'd like to do something like this up top:
+
+```
+const logger: Middleware<AppState> = // ...
+```
+
+...and just have everything below it, including `next` and `action`, be correctly inferred. But as middlewares are few and one-off, setting that up isn't really a priority.
 
 Anyhow - I hope this setup is of use to you too, and if you have any feedback, please do comment or reach out! 
 
