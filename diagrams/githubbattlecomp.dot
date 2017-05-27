@@ -1,0 +1,28 @@
+digraph {
+  rankdir = LR
+  bgcolor = transparent
+  compound = true
+
+  subgraph cluster_battle {
+    label = "Battle"
+    battle
+  }
+
+  subgraph cluster_combatant {
+    label = "Combatant"
+    data
+  }
+
+  subgraph cluster_detail {
+    label = "Detail"
+    detail
+  }
+
+  battle, detail [color=transparent,fontcolor=transparent,label=" "]
+
+  data [style=dashed, label="data"]
+
+  battle -> data [ltail=cluster_battle, dir=none]
+  data -> detail [ltail=cluster_combatant]
+
+}
