@@ -2,7 +2,7 @@
 type: post
 title: "Github Battle - an Angular case study using Firebase authentication"
 date: 2017-05-27
-tags: [case study, angular, github, firebase]
+tags: [case study, angular2, github, firebase]
 author: David
 excerpt: Dissecting Github Battle - an app consuming the Github API built with Angular and Firebase authentication
 ---
