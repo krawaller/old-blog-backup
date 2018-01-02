@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSS selectors are evil and JS is the solution</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+A pragmatic demonstration of the drawbacks with CSS selectors, and how inline styles through JS solves these problems
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/css-selectors-are-evil-and-js-is-the-solution">CSS selectors are evil and JS is the solution</a>
+    <span class="post-meta">
+      <time datetime="Tue Jan 02 2018 01:00:00 GMT+0100 (CET)">Jan 2nd 2018</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/css/'>css</a></span>
+      
+        <span><a href='../../tags/cssinjs/'>cssinjs</a></span>
+      
+        <span><a href='../../tags/bem/'>bem</a></span>
+      
+        <span><a href='../../tags/react/'>react</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="the-premise">The premise</h3>
+<p>In this blog post we&#39;ll demonstrate...</p>
+<ul>
+<li>why CSS inherently doesn&#39;t scale</li>
+<li>how BEM is a partial solution</li>
+<li>how inline styles through JS is a (nearly) full solution</li>
+</ul>
+<p>Towards the end we&#39;ll use React as a vehicle for our example, but the concepts apply equally well to Angular or any other modern JS framework. We won&#39;t use any &quot;CSSinJS library&quot;.</p>
+<p>A small caveat: according to many, what we&#39;re describing in this post isn&#39;t strictly CSSinJS, but inline styles via JS. However at this stage the distinction doesn&#39;t matter much, so if you came here because you&#39;re curious about CSSinJS, by all means read on!</p>
+<h3 id="our-example">Our example</h3>
+<p>Imagine we have a complex webapp with lots of styling. We now want to add a new UI concept; an <strong>explanation box</strong>, meant to be shown inside a bigger context to explain some related concept.</p>
+<p>Here&#39;s what it should look like:</p>
+<p><img src="../../img/cssinjsbox.png" alt=""></p>
+<p>Disregarding styling, here&#39;s the markup:</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">h2</span>&gt;</span>Did you know?<span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Ozelots hate maccaws!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span></code></pre>
+
+<p>We want to apply these styles to the <strong>explanation box</strong> <code>div</code>:</p>
+<pre><code><span class="tag">border-radius</span>: 15<span class="tag">px</span>;
+<span class="tag">padding</span>: 10<span class="tag">px</span>;
+<span class="tag">border</span>: 2<span class="tag">px</span> <span class="tag">solid</span> <span class="tag">springgreen</span>;
+<span class="tag">background-color</span>: <span class="tag">moccasin</span>;
+<span class="tag">color</span>: <span class="tag">magenta</span>;</code></pre>
+
+<p>And inside the box we want these styles for the <strong>explanation headline</strong> <code>h2</code>:</p>
+<pre><code><span class="tag">font-weight</span>: <span class="tag">normal</span>;
+<span class="tag">letter-spacing</span>: 5<span class="tag">px</span>;
+<span class="tag">padding-left</span>: 15<span class="tag">px</span>;
+<span class="tag">font-style</span>: <span class="tag">italic</span>;
+<span class="tag">font-size</span>: 14<span class="tag">px</span>;</code></pre>
+
+<p>As an added spice, also imagine these styles being applied to <strong>every <code>h2</code></strong> in our app:</p>
+<pre><code><span class="tag">font-family</span>: <span class="tag">Verdana</span>;
+<span class="tag">font-size</span>: 16<span class="tag">px</span>;</code></pre>
+
+<p>Now let&#39;s start exploring how to add these styles to our markup!</p>
+<h3 id="take-0-inline-styles">Take 0 - inline styles</h3>
+<p>The most primitive solution is to simply shove all needed style rules into the <code>style</code> prop of every explanation box:</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">style</span>=<span class="value">"border-radius: 15px; padding: 10px; border: 2px solid springgreen; background-color: moccasin; color: magenta;"</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">h2</span> <span class="attribute">style</span>=<span class="value">"font-family: Verdana; font-size: 14px; font-weight: normal; letter-spacing: 5px; padding-left: 15px; font-style: italic;"</span>&gt;</span>Did you know?<span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+    <span class="tag">&lt;<span class="title">p</span>&gt;</span>Ozelots hate maccaws!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+  <span class="tag">&lt;/<span class="title">div</span>&gt;</span></code></pre>
+
+<p>This is of course a horrible solution since</p>
+<ul>
+<li>the HTML becomes super-bloated and unreadable</li>
+<li>the styles can&#39;t be reused</li>
+<li>we&#39;d be repeating &quot;theme rules&quot; (like the <code>moccasin</code> background color) all over the place</li>
+</ul>
+<h3 id="take-1-stylesheet-with-selectors">Take 1 - stylesheet with selectors</h3>
+<p>To counter the above we always put our styles in a separate CSS file, using <strong>selectors</strong> to direct <strong>where they are applied</strong>.</p>
+<p>In order to be able to target explanation boxes we can <strong>introduce a class name</strong> to the markup:</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"explanationBox"</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">h2</span>&gt;</span>Did you know?<span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Ozelots hate maccaws!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span></code></pre>
+
+<p>In a separate CSS file we can now <strong>apply the box styles</strong> like this:</p>
+<pre><code><span class="class">.explanationBox</span> <span class="rules">{
+  <span class="rule"><span class="attribute">border-radius</span>:<span class="value"> <span class="number">15</span>px</span></span>;
+  <span class="rule"><span class="attribute">padding</span>:<span class="value"> <span class="number">10</span>px</span></span>;
+  <span class="rule"><span class="attribute">border</span>:<span class="value"> <span class="number">2</span>px solid springgreen</span></span>;
+  <span class="rule"><span class="attribute">background-color</span>:<span class="value"> moccasin</span></span>;
+  <span class="rule"><span class="attribute">color</span>:<span class="value"> magenta</span></span>;
+<span class="rule">}</span></span></code></pre>
+
+<p>We style the <strong>explanation headline</strong> by using a <strong>child combinator</strong> in the selector:</p>
+<pre><code><span class="class">.explanationBox</span> &gt; <span class="tag">h2</span> <span class="rules">{
+  <span class="rule"><span class="attribute">font-weight</span>:<span class="value"> normal</span></span>;
+  <span class="rule"><span class="attribute">letter-spacing</span>:<span class="value"> <span class="number">5</span>px</span></span>;
+  <span class="rule"><span class="attribute">padding-left</span>:<span class="value"> <span class="number">15</span>px</span></span>;
+  <span class="rule"><span class="attribute">font-style</span>:<span class="value"> italic</span></span>;
+  <span class="rule"><span class="attribute">font-size</span>:<span class="value"> <span class="number">14</span>px</span></span>;
+<span class="rule">}</span></span></code></pre>
+
+<p>The <strong>generic <code>h2</code> styles</strong> would get their own selector:</p>
+<pre><code><span class="tag">h2</span> <span class="rules">{
+  <span class="rule"><span class="attribute">font-family</span>:<span class="value"> Verdana</span></span>;
+  <span class="rule"><span class="attribute">font-size</span>:<span class="value"> <span class="number">16</span>px</span></span>;
+<span class="rule">}</span></span></code></pre>
+
+<p>Note that both of these later selectors will have an opinion about the <code>font-size</code> of our explanation headline, but since <code>.explanationBox &gt; h2</code> is more specific than <code>h2</code>, the former will win.</p>
+<h3 id="unanswerable-question-1-the-unknown-killer-problem">Unanswerable question 1 - the unknown killer problem</h3>
+<p>With our styles in a CSS file, we now have the following situation:</p>
+<p><img src="../../diagrams/cssinjs-selector.svg" alt=""></p>
+<p>The rule blobs are connected with their respective target elements via <strong>selectors</strong>. While they work fine for our simple example, they <strong>don&#39;t scale well</strong>. As the app grows it is very easy to end up in a messy situation where we are scared to change both HTML and CSS, in fear of some selector somewhere breaking.</p>
+<p>Even in our small example the main reasons for the unscalability are easy to demonstrate.</p>
+<p>Look again at our HTML...</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"explanationBox"</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">h2</span>&gt;</span>Did you know?<span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Ozelots hate maccaws!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span></code></pre>
+
+<p>...and ponder this simple question with regards to the <code>div</code>:</p>
+<blockquote>
+<p><em>What styles are applied to this element?</em></p>
+</blockquote>
+<p>We have no easy way of knowing! The elements are being shot at by CSS selectors somewhere out there in the dark. From this side we have no idea whether any of them are targetting this specific element.</p>
+<p>It is <em>likely</em> that there is a selector targetting the <code>.explanationBox</code> class in a selector somewhere. But because CSS selectors are global we&#39;d have to <em>search <strong>all</strong> CSS</em> in order to know.</p>
+<p>And consider asking the same question about the <code>h2</code> - it doesn&#39;t have a class, which might imply it is not in the crosshairs, but it is in fact targeted by <em>two</em> selectors; <code>h2</code> and <code>.explanationBox &gt; h2</code>.</p>
+<p>Just by looking at the HTML we <strong>cannot know what styles, if any, are applied to an element</strong>.</p>
+<h3 id="unanswerable-question-2-the-unknown-victim-problem">Unanswerable question 2 - the unknown victim problem</h3>
+<p>We find the reverse of the same problem in the CSS file. Look for example at this part:</p>
+<pre><code><span class="class">.explanationBox</span> &gt; <span class="tag">h2</span> <span class="rules">{
+  <span class="rule"><span class="attribute">font-weight</span>:<span class="value"> normal</span></span>;
+  <span class="rule"><span class="attribute">letter-spacing</span>:<span class="value"> <span class="number">5</span>px</span></span>;
+  <span class="rule"><span class="attribute">padding-left</span>:<span class="value"> <span class="number">15</span>px</span></span>;
+  <span class="rule"><span class="attribute">font-style</span>:<span class="value"> italic</span></span>;
+  <span class="rule"><span class="attribute">font-size</span>:<span class="value"> <span class="number">14</span>px</span></span>;
+<span class="rule">}</span></span></code></pre>
+
+<p>Now imagine trying to answer this question:</p>
+<blockquote>
+<p><em>To which elements are these styles applied?</em></p>
+</blockquote>
+<p>This is impossible to know. We&#39;d have to search through all our HTML files, or templates in case of a dynamic app. And in a dynamic setting the <code>.explanationBox</code> element and the contained <code>h2</code> might live in completely different places, making it even harder to figure out the answer.</p>
+<p>This makes editing a CSS file really scary. Can we remove this part? If the question above was easy to answer then we could know whether it is safe to remove a certain part, but now we cannot!</p>
+<h3 id="take-2-using-the-bem-naming-convention">Take 2 - using the BEM naming convention</h3>
+<p>There has been many attempts to mitigate the mess caused by the inability to answer these two questions. One such attempt is the <a href="https://en.bem.info/">BEM naming convention</a>, which basically boils down to...</p>
+<ul>
+<li>have selectors consist of a single class always</li>
+<li>name the classes according to a strict convention</li>
+</ul>
+<p>For our example, the explanation box would be a <strong>Block</strong>, while the <code>h2</code> inside of that would be an <strong>Element</strong> of that block. This is the <code>B</code> and <code>E</code> of <code>BEM</code> (the <code>M</code> stands for modifier but we don&#39;t need that here).</p>
+<p>Using BEM logic our markup would become:</p>
+<pre><code><span class="tag">&lt;<span class="title">div</span> <span class="attribute">class</span>=<span class="value">"explanationBox"</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">h2</span> <span class="attribute">class</span>=<span class="value">"explanationBox__headline"</span>&gt;</span>Did you know?<span class="tag">&lt;/<span class="title">h2</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Ozelots hate maccaws!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">div</span>&gt;</span></code></pre>
+
+<p>The CSS would now be:</p>
+<pre><code><span class="tag">h2</span> <span class="rules">{
+  <span class="rule"><span class="attribute">font-family</span>:<span class="value"> Verdana</span></span>;
+  <span class="rule"><span class="attribute">font-size</span>:<span class="value"> <span class="number">14</span>px</span></span>;
+<span class="rule">}</span></span>
+
+<span class="class">.explanationBox</span> <span class="rules">{
+  <span class="rule"><span class="attribute">border-radius</span>:<span class="value"> <span class="number">15</span>px</span></span>;
+  <span class="rule"><span class="attribute">padding</span>:<span class="value"> <span class="number">10</span>px</span></span>;
+  <span class="rule"><span class="attribute">border</span>:<span class="value"> <span class="number">2</span>px solid springgreen</span></span>;
+  <span class="rule"><span class="attribute">background-color</span>:<span class="value"> moccasin</span></span>;
+  <span class="rule"><span class="attribute">color</span>:<span class="value"> magenta</span></span>;
+<span class="rule">}</span></span>
+
+<span class="class">.explanationBox__headline</span> <span class="rules">{
+  <span class="rule"><span class="attribute">font-weight</span>:<span class="value"> normal</span></span>;
+  <span class="rule"><span class="attribute">letter-spacing</span>:<span class="value"> <span class="number">5</span>px</span></span>;
+  <span class="rule"><span class="attribute">padding-left</span>:<span class="value"> <span class="number">15</span>px</span></span>;
+  <span class="rule"><span class="attribute">font-style</span>:<span class="value"> italic</span></span>;
+<span class="rule">}</span></span></code></pre>
+
+<p>It is now slightly more clear what styles are applied where. Both the earlier questions are easier to answer, since we can do a search for the more precise class names.</p>
+<p>But we still have the problem of the generic <code>h2</code> selector. Also class names might be dynamically created and/or added to an element, so again, in a dynamic setting it might still be hard to find out exactly what&#39;s going on.</p>
+<h3 id="take-3-inline-styles-in-a-react-component">Take 3 - inline styles in a React component</h3>
+<p>The basic idea in BEM, as well as in OOCSS or any of the other attempts at bringing structure to CSS, is to think in terms of <strong>components</strong>. All style definitions, as far as possible, should be tied to a certain component.</p>
+<p>This jives very well with modern JS frameworks, who (almost) all have a component-centric architecture. If components are our main abstraction, then it is very easy to make an API to style individual components.</p>
+<p>React (and most of the competition) does this by letting us provide a CSS-like JS object to the <code>style</code> prop:</p>
+<pre><code>const box = {
+  borderRadius: <span class="string">"15px"</span>,
+  padding: <span class="string">"10px"</span>,
+  border: <span class="string">'2px solid springgreen'</span>,
+  backgroundColor: <span class="string">'moccasin'</span>,
+  color: <span class="string">'magenta'</span>
+};
+
+const headline = {
+  fontFamily: <span class="string">'Verdana'</span>, <span class="comment">// should live in generic h2 styling, but we're cheating for now</span>
+  fontWeight: <span class="string">"normal"</span>,
+  letterSpacing: <span class="string">"5px"</span>,
+  paddingLeft: <span class="string">"15px"</span>,
+  fontStyle: <span class="string">"italic"</span>,
+  fontSize: <span class="string">'14px'</span>
+};
+
+export <span class="class"><span class="keyword">class</span> <span class="title">ExplanationBox</span> <span class="inheritance"><span class="keyword">extends</span></span> <span class="title">React</span>.<span class="title">Component</span> {</span>
+  render() {
+    <span class="keyword">return</span> (
+      &lt;<span class="keyword">div</span> style={box}&gt;
+        &lt;h2 style={headline}&gt;{<span class="keyword">this</span>.props.title}&lt;/h2&gt;
+        {<span class="keyword">this</span>.props.children}
+      &lt;/<span class="keyword">div</span>&gt;
+    );
+  }
+}</code></pre>
+
+<p>Elsewhere in our React app we can now do this...</p>
+<pre><code><span class="tag">&lt;<span class="title">ExplanationBox</span> <span class="attribute">title</span>=<span class="value">"Did you know?"</span>&gt;</span>
+  <span class="tag">&lt;<span class="title">p</span>&gt;</span>Ozelots hate maccaws!<span class="tag">&lt;/<span class="title">p</span>&gt;</span>
+<span class="tag">&lt;/<span class="title">ExplanationBox</span>&gt;</span></code></pre>
+
+<p>...and we have our reusable, styled component!</p>
+<h3 id="take-4-imported-inline-styles">Take 4 - imported inline styles</h3>
+<p>However, what you just saw was really nothing but a regression to our <code>Take 0</code> attempt, where we put all styles inline. Like an <em>animal</em>.</p>
+<p>But we can improve on this super easily, simply by migrating the styles to a separate file! Imagine the following living in a file named <code>styles.js</code>:</p>
+<pre><code>export const typography = {
+  h2: {
+    fontFamily: 'Verdana',
+    fontSize: '16px'
+  }
+};
+
+export const explanation = {
+  box: {
+    borderRadius: "15px",
+    padding: "10px",
+    border: '2px solid springgreen',
+    backgroundColor: 'moccasin,
+    color: 'magenta',
+  },
+  headline: {
+    ...typography.h2
+    fontWeight: "normal",
+    letterSpacing: "5px",
+    paddingLeft: "15px",
+    fontStyle: "italic",
+    fontSize: '14px'
+  }
+};</code></pre>
+
+<p>Note the handling of the basic <code>h2</code> styles!</p>
+<p>Our React component now becomes this:</p>
+<pre><code>import {explanation} from styles;
+
+export <span class="class"><span class="keyword">class</span> <span class="title">ExplanationBox</span> <span class="inheritance"><span class="keyword">extends</span></span> <span class="title">React</span>.<span class="title">Component</span> {</span>
+  render() {
+    <span class="keyword">return</span> (
+      &lt;<span class="keyword">div</span> style={explanation.box}&gt;
+        &lt;h2 style={explanation.headline}&gt;{<span class="keyword">this</span>.props.title}&lt;/h2&gt;
+        {<span class="keyword">this</span>.props.children}
+      &lt;/<span class="keyword">div</span>&gt;
+    );
+  }
+}</code></pre>
+
+<p>We have now sort of reinvented the stylesheet! Except, where before the stylesheet used selectors to fire blindly into the dark...</p>
+<p><img src="../../diagrams/cssinjs-selector.svg" alt=""></p>
+<p>...we now let the components go get exactly the styles they need via <code>import</code>s:</p>
+<p><img src="../../diagrams/cssinjs-import.svg" alt=""></p>
+<p>It might not be immediately obvious, but the flipping of this arrow makes a world of difference!</p>
+<h3 id="finding-the-killer">Finding the killer</h3>
+<p>Remember the first unanswerable question?</p>
+<blockquote>
+<p><em>What styles are applied to this element?</em></p>
+</blockquote>
+<p>In our imported inline style setup, this becomes trivial to answer. I simply follow the thread backwards from the style prop!</p>
+<p><img src="../../img/cssinjs-findkiller.gif" alt=""></p>
+<h3 id="finding-the-victim">Finding the victim</h3>
+<p>Our second unanswerable question was:</p>
+<blockquote>
+<p><em>To which elements are these styles applied?</em></p>
+</blockquote>
+<p>Again, because of the explicit imports, this becomes very easy to answer (if you have a semi-competent editor):</p>
+<p><img src="../../img/cssinjs-findvictim.gif" alt=""></p>
+<h3 id="less-isn-t-more">LESS isn&#39;t more</h3>
+<p>Through moving our style definitions to JS land, the need for CSS preprocessors goes out the window. Remember how we used the <code>...</code> spread operator to mix in the <code>h2</code> styles into our headline rules?</p>
+<pre><code>headline: {
+  ...typography.h2
+  fontWeight: <span class="string">"normal"</span>,
+  letterSpacing: <span class="string">"5px"</span>,
+  paddingLeft: <span class="string">"15px"</span>,
+  fontStyle: <span class="string">"italic"</span>,
+  fontSize: <span class="string">'14px'</span>
+}</code></pre>
+
+<p>That was the equivalent of a LESS/SASS mixin! You&#39;ll quickly find that the other syntax they give us can be easily replicated with pure JS. For example, having global variables becomes trivial:</p>
+<pre><code>export <span class="keyword">const</span> palette = {
+  softcolor: <span class="string">'moccasin'</span>,
+  hardcolor: <span class="string">'magenta'</span>,
+  accentuationcolor: <span class="string">'springgreen'</span>
+}
+
+export <span class="keyword">const</span> explanationBlock = {
+  box: {
+    borderRadius: <span class="string">"15px"</span>,
+    padding: <span class="string">"10px"</span>,
+    border: <span class="string">'2px solid '</span> + palette.accentuationcolor,
+    backgroundColor: palette.softcolor,
+    color: palette.hardcolor,
+  },
+  <span class="comment">// ...truncated</span></code></pre>
+
+<p>As do implementing helper functions to add vendor prefixes, saturate colours, etc.</p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>To recap; by turning the arrows around through using JS and inline styles, almost all opaqueness of regular CSS goes away. Previously difficult tasks such as...</p>
+<ul>
+<li>renaming a CSS class</li>
+<li>identifying and removing dead CSS code</li>
+<li>hitting the correct elements with selectors</li>
+<li>NOT hitting the wrong elements with selectors</li>
+</ul>
+<p>...suddenly become easy or entirely moot.</p>
+<p>While there are still a lot of questions to be answered regarding moving CSS to JS space, there&#39;s no doubt in my mind that just being able to flip the arrow of responsibility makes it all worth it.</p>
+<p>One of the primary downsides of inline JS styles is that we can&#39;t use pseudoselectors such as <code>:hover</code> or <code>@media</code>. I hope to show how we can get around that using helper libraries in an upcoming post.</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>

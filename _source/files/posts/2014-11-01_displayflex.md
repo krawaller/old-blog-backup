@@ -1,7 +1,7 @@
 ---
 title: Exploring a CSS3 tournament bracket
 author: David
-tags: [css3, flexbox]
+tags: [css, css3, flexbox]
 date: 2014-11-01
 excerpt: "Dissecting a tournament bracket built with the CSS3 flexbox tech"
 type: post

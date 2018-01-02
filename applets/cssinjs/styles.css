@@ -1,0 +1,34 @@
+body {
+  padding: 8px;
+}
+
+body > * {
+  display: none;
+}
+body > :target {
+  display: block;
+}
+
+
+/* pretend this is global h2 selector */
+#normalcss h2 {
+  font-family: Verdana;
+  font-size: 14px;
+}
+
+.aside {
+  border-radius: 15px;
+  padding: 10px;
+  border: 2px solid springgreen;
+  background-color: moccasin;
+  color: magenta;
+}
+
+.aside > h2 {
+  font-weight: normal;
+  letter-spacing: 5px;
+  padding-left: 15px;
+  font-style: italic;
+}
+
+
