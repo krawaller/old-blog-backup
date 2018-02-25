@@ -140,26 +140,26 @@ Here we can see the source talkback definition dealing with both `(1)` and `(2)`
 Let's now tie up our observations about the source talkback into a TypeScript definition:
 
 ```javascript
-type SourceTalkBack = (type: DATA | END, payload: any) => void;
+type SourceTalkback = (type: DATA | END, payload: any) => void;
 ```
 
 If we accept the notion that a source is never interested in why a sink terminates, we could skip the second parameter since it is only used for `(2, error)`:
 
 ```javascript
-type SourceTalkBack = (type: DATA | END) => void;
+type SourceTalkback = (type: DATA | END) => void;
 ```
 
 We could also potentially split this into separate interfaces for pullable and listenable sources:
 
 ```javascript
-type PullableSourceTalkBack = (type: DATA | END) => void;
-type ListenableSourceTalkBack = (type: END) => void;
+type PullableSourceTalkback = (type: DATA | END) => void;
+type ListenableSourceTalkback = (type: END) => void;
 ```
 
-And then define a `SourceTalkBack` as being one or the other:
+And then define a `SourceTalkback` as being one or the other:
 
 ```javascript
-type SourceTalkBack = PullableSourceTalkBack | ListenableSourceTalkBack;
+type SourceTalkback = PullableSourceTalkback | ListenableSourceTalkback;
 ```
 
 ### Sink talkbacks
@@ -215,14 +215,14 @@ Here we can clearly see the sink talkback handling all three cases including ter
 Since sink talkbacks actually handle all three cases, they are the first kind of callbag that matches the official callbag typing!
 
 ```typescript
-type SinkTalkBack = (type: START | DATA | END, payload?: any) => void;
+type SinkTalkback = (type: START | DATA | END, payload?: any) => void;
 ```
 
 We can clarify the second parameter by splitting this into three different types and joining them via an [intersection type](https://www.typescriptlang.org/docs/handbook/advanced-types.html) using `&`:
 
 ```typescript
-type SinkTalkBack = 
-  & ((start: START, sourceTalkback: SourceTalkBack) => void)
+type SinkTalkback = 
+  & ((start: START, sourceTalkback: SourceTalkback) => void)
   & ((deliver: DATA, data: any) => void)
   & ((terminate: END, error?: any) => void);
 ```
@@ -236,7 +236,7 @@ This gives us rather nice intellisense help in a TypeScript setting:
 In fact, that's so nice that we should split up `SourceTalkback` in the same way so that it too gets separate parameter names per call type:
 
 ```typescript
-type SourceTalkBack = 
+type SourceTalkback = 
   & ((request: DATA) => void)
   & ((terminate: END) => void);
 ```
@@ -254,7 +254,7 @@ type Source = (start: START, sinkTalkback: SinkTalkback) => void;
 ...and `Source talkback`:
 
 ```typescript
-type SourceTalkBack = 
+type SourceTalkback = 
   & ((request: DATA) => void)
   & ((terminate: END) => void);
 ```
@@ -263,7 +263,7 @@ But what exactly does the spec say about **source**? Well:
 
 > a callbag which is expected to deliver data
 
-Hmm. Who is it that delivers data - is it the `Source` or the `SourceTalkBack`? Well, that actually depends!
+Hmm. Who is it that delivers data - is it the `Source` or the `SourceTalkback`? Well, that actually depends!
 
 In a *pullable source* it is the *source talkback*. Check again at the source for `fromPullStream`:
 
@@ -298,7 +298,7 @@ const interval = period => (start, sink) => {
 
 ...you'll note the `sink(1, data)` call is taking place inside the *source*.
 
-This means that the word **source** as defined in the spec encompasses *both* `Source` and `SourceTalkBack`. The concept includes both typings. Or you could argue that `SourceTalkback` is an implementation detail of `Source`.
+This means that the word **source** as defined in the spec encompasses *both* `Source` and `SourceTalkback`. The concept includes both typings. Or you could argue that `SourceTalkback` is an implementation detail of `Source`.
 
 Either way, using the name `Source` for a type seems like needless confusion potential. To mitigate that, let's rename what we've defined as `Source` and call it `SourceInitiator` instead:
 
@@ -332,7 +332,7 @@ const forEach = operation => source => {
 };
 ```
 
-The `sourceInitiator(0, sinkTalkBack)` call takes place inside a function that takes a source parameter and returns nothing. Is perhaps that a sink? Or, by the previous logic, a sink initiator?
+The `sourceInitiator(0, sinkTalkback)` call takes place inside a function that takes a source parameter and returns nothing. Is perhaps that a sink? Or, by the previous logic, a sink initiator?
 
 ```typescript
 type SinkInitiator = (source: SourceInitiator) => void;
@@ -420,15 +420,15 @@ type SourceFactory = (...args: Array<any>) => SourceInitiator;
 
 type SourceInitiator = (start: START, sinkTalkback: SinkTalkback) => void;
 
-type SourceTalkBack = 
+type SourceTalkback = 
   & ((request: DATA) => void)
   & ((terminate: END) => void);
 
 // Sink
 type SinkConnector = (source: SourceInitiator) => SourceInitiator | void;
 
-type SinkTalkBack = 
-  & ((start: START, sourceTalkback: SourceTalkBack) => void)
+type SinkTalkback = 
+  & ((start: START, sourceTalkback: SourceTalkback) => void)
   & ((deliver: DATA, data: any) => void)
   & ((terminate: END, error?: any) => void);
 
@@ -443,12 +443,12 @@ However, if we want to avoid using types that haven't been defined yet, we can l
 ...and reorder them backwards according to that:
 
 ```typescript
-type SourceTalkBack = 
+type SourceTalkback = 
   & ((request: DATA) => void)
   & ((terminate: END) => void);
 
-type SinkTalkBack = 
-  & ((start: START, sourceTalkback: SourceTalkBack) => void)
+type SinkTalkback = 
+  & ((start: START, sourceTalkback: SourceTalkback) => void)
   & ((deliver: DATA, data: any) => void)
   & ((terminate: END, error?: any) => void);
 

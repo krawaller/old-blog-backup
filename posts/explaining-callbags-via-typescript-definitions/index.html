@@ -244,17 +244,17 @@ Understanding callbags by splitting them into types with individual TypeScript d
 
 <p>Here we can see the source talkback definition dealing with both <code>(1)</code> and <code>(2)</code>.</p>
 <p>Let&#39;s now tie up our observations about the source talkback into a TypeScript definition:</p>
-<pre><code>type SourceTalkBack = (type: DATA | END, payload: any) =&gt; <span class="keyword">void</span>;</code></pre>
+<pre><code>type SourceTalkback = (type: DATA | END, payload: any) =&gt; <span class="keyword">void</span>;</code></pre>
 
 <p>If we accept the notion that a source is never interested in why a sink terminates, we could skip the second parameter since it is only used for <code>(2, error)</code>:</p>
-<pre><code>type SourceTalkBack = (type: DATA | END) =&gt; <span class="keyword">void</span>;</code></pre>
+<pre><code>type SourceTalkback = (type: DATA | END) =&gt; <span class="keyword">void</span>;</code></pre>
 
 <p>We could also potentially split this into separate interfaces for pullable and listenable sources:</p>
-<pre><code>type PullableSourceTalkBack = (type: DATA | END) =&gt; <span class="keyword">void</span>;
-type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</span>;</code></pre>
+<pre><code>type PullableSourceTalkback = (type: DATA | END) =&gt; <span class="keyword">void</span>;
+type ListenableSourceTalkback = (type: END) =&gt; <span class="keyword">void</span>;</code></pre>
 
-<p>And then define a <code>SourceTalkBack</code> as being one or the other:</p>
-<pre><code>type SourceTalkBack = PullableSourceTalkBack | ListenableSourceTalkBack;</code></pre>
+<p>And then define a <code>SourceTalkback</code> as being one or the other:</p>
+<pre><code>type SourceTalkback = PullableSourceTalkback | ListenableSourceTalkback;</code></pre>
 
 <h3 id="sink-talkbacks">Sink talkbacks</h3>
 <p>Now for the third and final type - sink talkbacks! In our table we had them listed as accepting all three types <code>START</code>, <code>DATA</code> and <code>END</code>. This makes sense since they...</p>
@@ -298,11 +298,11 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
 
 <p>Here we can clearly see the sink talkback handling all three cases including terminations <code>(2)</code> - although, as is often the case, the only thing it does with the termination is to pass it down the chain.</p>
 <p>Since sink talkbacks actually handle all three cases, they are the first kind of callbag that matches the official callbag typing!</p>
-<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">SinkTalkBack</span> = <span class="container">(<span class="title">type</span>: <span class="type">START</span> | <span class="type">DATA</span> | <span class="type">END</span>, <span class="title">payload</span>?: <span class="title">any</span>)</span> =&gt; void;</span></code></pre>
+<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">SinkTalkback</span> = <span class="container">(<span class="title">type</span>: <span class="type">START</span> | <span class="type">DATA</span> | <span class="type">END</span>, <span class="title">payload</span>?: <span class="title">any</span>)</span> =&gt; void;</span></code></pre>
 
 <p>We can clarify the second parameter by splitting this into three different types and joining them via an <a href="https://www.typescriptlang.org/docs/handbook/advanced-types.html">intersection type</a> using <code>&amp;</code>:</p>
-<pre><code>type SinkTalkBack = 
-  &amp; <span class="function"><span class="params">((start: START, sourceTalkback: SourceTalkBack) =&gt; <span class="reserved">void</span>)</span>
+<pre><code>type SinkTalkback = 
+  &amp; <span class="function"><span class="params">((start: START, sourceTalkback: SourceTalkback) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((deliver: DATA, data: any) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END, error?: any) =&gt; <span class="reserved">void</span>)</span>;</span></code></pre>
 
@@ -310,7 +310,7 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
 <p>This gives us rather nice intellisense help in a TypeScript setting:</p>
 <p><img src="../../gifs/callbag-typing.gif" alt=""></p>
 <p>In fact, that&#39;s so nice that we should split up <code>SourceTalkback</code> in the same way so that it too gets separate parameter names per call type:</p>
-<pre><code>type SourceTalkBack = 
+<pre><code>type SourceTalkback = 
   &amp; <span class="function"><span class="params">((request: DATA) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END) =&gt; <span class="reserved">void</span>)</span>;</span></code></pre>
 
@@ -320,7 +320,7 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
 <pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">Source</span> = <span class="container">(<span class="title">start</span>: <span class="type">START</span>, <span class="title">sinkTalkback</span>: <span class="type">SinkTalkback</span>)</span> =&gt; void;</span></code></pre>
 
 <p>...and <code>Source talkback</code>:</p>
-<pre><code>type SourceTalkBack = 
+<pre><code>type SourceTalkback = 
   &amp; <span class="function"><span class="params">((request: DATA) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END) =&gt; <span class="reserved">void</span>)</span>;</span></code></pre>
 
@@ -328,7 +328,7 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
 <blockquote>
 <p>a callbag which is expected to deliver data</p>
 </blockquote>
-<p>Hmm. Who is it that delivers data - is it the <code>Source</code> or the <code>SourceTalkBack</code>? Well, that actually depends!</p>
+<p>Hmm. Who is it that delivers data - is it the <code>Source</code> or the <code>SourceTalkback</code>? Well, that actually depends!</p>
 <p>In a <em>pullable source</em> it is the <em>source talkback</em>. Check again at the source for <code>fromPullStream</code>:</p>
 <pre><code><span class="keyword">const</span> fromPullStream = read =&gt; (start, sink) =&gt; {
   <span class="keyword">if</span> (start !== <span class="number">0</span>) <span class="keyword">return</span>;
@@ -355,7 +355,7 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
 };</code></pre>
 
 <p>...you&#39;ll note the <code>sink(1, data)</code> call is taking place inside the <em>source</em>.</p>
-<p>This means that the word <strong>source</strong> as defined in the spec encompasses <em>both</em> <code>Source</code> and <code>SourceTalkBack</code>. The concept includes both typings. Or you could argue that <code>SourceTalkback</code> is an implementation detail of <code>Source</code>.</p>
+<p>This means that the word <strong>source</strong> as defined in the spec encompasses <em>both</em> <code>Source</code> and <code>SourceTalkback</code>. The concept includes both typings. Or you could argue that <code>SourceTalkback</code> is an implementation detail of <code>Source</code>.</p>
 <p>Either way, using the name <code>Source</code> for a type seems like needless confusion potential. To mitigate that, let&#39;s rename what we&#39;ve defined as <code>Source</code> and call it <code>SourceInitiator</code> instead:</p>
 <pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">SourceInitiator</span> = <span class="container">(<span class="title">start</span>: <span class="type">START</span>, <span class="title">sinkTalkback</span>: <span class="type">SinkTalkback</span>)</span> =&gt; void;</span></code></pre>
 
@@ -377,7 +377,7 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
   });
 };</code></pre>
 
-<p>The <code>sourceInitiator(0, sinkTalkBack)</code> call takes place inside a function that takes a source parameter and returns nothing. Is perhaps that a sink? Or, by the previous logic, a sink initiator?</p>
+<p>The <code>sourceInitiator(0, sinkTalkback)</code> call takes place inside a function that takes a source parameter and returns nothing. Is perhaps that a sink? Or, by the previous logic, a sink initiator?</p>
 <pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">SinkInitiator</span> = <span class="container">(<span class="title">source</span>: <span class="type">SourceInitiator</span>)</span> =&gt; void;</span></code></pre>
 
 <p>I&#39;d say yes, that is a sink (initiator)!</p>
@@ -426,15 +426,15 @@ type <span class="function"><span class="title">SourceFactory</span> = <span cla
 
 type <span class="function"><span class="title">SourceInitiator</span> = <span class="params">(start: START, sinkTalkback: SinkTalkback)</span> =&gt;</span> <span class="reserved">void</span>;
 
-type SourceTalkBack = 
+type SourceTalkback = 
   &amp; <span class="function"><span class="params">((request: DATA) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END) =&gt; <span class="reserved">void</span>)</span>;
 
 // <span class="title">Sink</span>
 <span class="title">type</span> <span class="title">SinkConnector</span> = <span class="params">(source: SourceInitiator)</span> =&gt;</span> SourceInitiator | <span class="reserved">void</span>;
 
-type SinkTalkBack = 
-  &amp; <span class="function"><span class="params">((start: START, sourceTalkback: SourceTalkBack) =&gt; <span class="reserved">void</span>)</span>
+type SinkTalkback = 
+  &amp; <span class="function"><span class="params">((start: START, sourceTalkback: SourceTalkback) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((deliver: DATA, data: any) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END, error?: any) =&gt; <span class="reserved">void</span>)</span>;
 
@@ -444,12 +444,12 @@ type SinkTalkBack =
 <p>However, if we want to avoid using types that haven&#39;t been defined yet, we can look at the dependency graph of the types...</p>
 <p><img src="../../diagrams/callbag-typedefs.svg" alt=""></p>
 <p>...and reorder them backwards according to that:</p>
-<pre><code>type SourceTalkBack = 
+<pre><code>type SourceTalkback = 
   &amp; <span class="function"><span class="params">((request: DATA) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END) =&gt; <span class="reserved">void</span>)</span>;
 
-<span class="title">type</span> <span class="title">SinkTalkBack</span> = 
-  &amp; <span class="params">((start: START, sourceTalkback: SourceTalkBack) =&gt; <span class="reserved">void</span>)</span>
+<span class="title">type</span> <span class="title">SinkTalkback</span> = 
+  &amp; <span class="params">((start: START, sourceTalkback: SourceTalkback) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((deliver: DATA, data: any) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((terminate: END, error?: any) =&gt; <span class="reserved">void</span>)</span>;
 
