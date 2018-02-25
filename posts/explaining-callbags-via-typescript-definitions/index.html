@@ -304,7 +304,7 @@ type ListenableSourceTalkBack = (type: END) =&gt; <span class="keyword">void</sp
 <pre><code>type SinkTalkBack = 
   &amp; <span class="function"><span class="params">((start: START, sourceTalkback: SourceTalkBack) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((deliver: DATA, data: any) =&gt; <span class="reserved">void</span>)</span>
-  &amp; <span class="params">((terminate: END, error?: any))</span>;</span></code></pre>
+  &amp; <span class="params">((terminate: END, error?: any) =&gt; <span class="reserved">void</span>)</span>;</span></code></pre>
 
 <p>The extra parenthesises around the three function types are needed for TypeScript not to throw a fit.</p>
 <p>This gives us rather nice intellisense help in a TypeScript setting:</p>
@@ -436,7 +436,7 @@ type SourceTalkBack =
 type SinkTalkBack = 
   &amp; <span class="function"><span class="params">((start: START, sourceTalkback: SourceTalkBack) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((deliver: DATA, data: any) =&gt; <span class="reserved">void</span>)</span>
-  &amp; <span class="params">((terminate: END, error?: any))</span>;
+  &amp; <span class="params">((terminate: END, error?: any) =&gt; <span class="reserved">void</span>)</span>;
 
 // <span class="title">Other</span>
 <span class="title">type</span> <span class="title">Operator</span> = <span class="params">(...args: Array&lt;any&gt;)</span> =&gt;</span> SinkConnector;</code></pre>
@@ -451,7 +451,7 @@ type SinkTalkBack =
 <span class="title">type</span> <span class="title">SinkTalkBack</span> = 
   &amp; <span class="params">((start: START, sourceTalkback: SourceTalkBack) =&gt; <span class="reserved">void</span>)</span>
   &amp; <span class="params">((deliver: DATA, data: any) =&gt; <span class="reserved">void</span>)</span>
-  &amp; <span class="params">((terminate: END, error?: any))</span>;
+  &amp; <span class="params">((terminate: END, error?: any) =&gt; <span class="reserved">void</span>)</span>;
 
 <span class="title">type</span> <span class="title">SourceInitiator</span> = <span class="params">(type: START, payload: SinkTalkback)</span> =&gt;</span> <span class="reserved">void</span>;
 

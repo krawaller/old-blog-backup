@@ -224,7 +224,7 @@ We can clarify the second parameter by splitting this into three different types
 type SinkTalkBack = 
   & ((start: START, sourceTalkback: SourceTalkBack) => void)
   & ((deliver: DATA, data: any) => void)
-  & ((terminate: END, error?: any));
+  & ((terminate: END, error?: any) => void);
 ```
 
 The extra parenthesises around the three function types are needed for TypeScript not to throw a fit.
@@ -430,7 +430,7 @@ type SinkConnector = (source: SourceInitiator) => SourceInitiator | void;
 type SinkTalkBack = 
   & ((start: START, sourceTalkback: SourceTalkBack) => void)
   & ((deliver: DATA, data: any) => void)
-  & ((terminate: END, error?: any));
+  & ((terminate: END, error?: any) => void);
 
 // Other
 type Operator = (...args: Array<any>) => SinkConnector;
@@ -450,7 +450,7 @@ type SourceTalkBack =
 type SinkTalkBack = 
   & ((start: START, sourceTalkback: SourceTalkBack) => void)
   & ((deliver: DATA, data: any) => void)
-  & ((terminate: END, error?: any));
+  & ((terminate: END, error?: any) => void);
 
 type SourceInitiator = (type: START, payload: SinkTalkback) => void;
 
