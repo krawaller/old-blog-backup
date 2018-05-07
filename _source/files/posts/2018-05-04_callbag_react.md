@@ -1,10 +1,10 @@
 ---
 type: post
-title: "Using Callbags with React"
+title: "Building TodoMVC with Callbags and React"
 date: 2018-05-07
-tags: [callbags,react,redux,case study]
+tags: [callbags,react,redux,case study, todomvc]
 author: David
-excerpt: Making a TodoMVC implementation using Callbags and React
+excerpt: Making a TodoMVC implementation using Callbags and React, introducing the needed tools as we go!
 ---
 
 ### Premise

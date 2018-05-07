@@ -2,7 +2,7 @@
 type: post
 title: "A Cycle.js TodoMVC codebase walkthrough"
 date: 2016-03-15
-tags: [cycle,case study]
+tags: [cycle,case study,todomvc]
 author: David
 excerpt: Picking apart the TodoMVC Cycle.js demo app
 draft: true

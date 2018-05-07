@@ -2,7 +2,7 @@
 type: post
 title: "Dissecting a Callbag TodoMVC implementation"
 date: 2018-02-23
-tags: [callbags,case study,snabbdom,redux]
+tags: [callbags,case study,snabbdom,redux,todomvc]
 author: David
 excerpt: Peeking under the hood of a TodoMVC implementation using only Callbags and Snabbdom
 ---

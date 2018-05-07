@@ -1,7 +1,7 @@
 ---
 title: A Reflux TodoMVC codebase walkthrough
 author: David
-tags: [react,reflux,case study]
+tags: [react,reflux,case study,todomvc]
 date: 2014-11-19
 excerpt: A closer look at the code and data flow in the Reflux TodoMVC implementation
 type: post
