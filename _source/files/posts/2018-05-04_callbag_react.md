@@ -2,9 +2,9 @@
 type: post
 title: "Using Callbags with React"
 date: 2018-05-07
-tags: [callbags, react, redux]
+tags: [callbags,react,redux,case study]
 author: David
-excerpt: Using callbags with React
+excerpt: Making a TodoMVC implementation using Callbags and React
 ---
 
 ### Premise
