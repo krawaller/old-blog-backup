@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>How to reduce boilerplate in Redux</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A web developer blog talking mostly about JavaScript">
+  
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link rel="stylesheet" href="../../css/theme.css"/>
+  <link rel="stylesheet" href="../../css/specials.css"/>
+  
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-11433118-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+</head>
+<body>
+
+<header class="site-head">
+  <div class="container">
+    <!-- Vertically center -->
+    <div class="vertical">
+      <div class="site-head-content inner">
+        <h1 class="blog-title"><a href="../../">Krawaller</a></h1>
+        <h2 class="blog-description">
+          <ul class="social-nav">
+            <li class="twitter"><a href="http://www.twitter.com/krawaller">Twitter</a></li>
+            <li class="github"><a href="http://www.github.com/krawaller">Github</a></li>
+            <li class="mail"><a href="mailto:info@krawaller.se">Mail</a></li>
+            <li class="rss"><a href="../../rss.xml">RSS</a></li>
+          </ul>
+        </h2>
+      </div>
+    </div><!-- END .vertical -->
+  </div><!-- END .container -->
+</header>
+
+<div class="sub-head">
+  <div class="container">
+  	
+Exploring a pattern that lets us group related logic and reduce boilerplate in Redux apps
+  	
+  </div>
+</div><!-- END .sub-head -->
+
+<div class="container">
+  <main class="content" role="main">
+
+
+<article>
+  
+  <header class="post-header">
+  <h2 class="post-title">
+    <a href="../../posts/how-to-reduce-boilerplate-in-redux">How to reduce boilerplate in Redux</a>
+    <span class="post-meta">
+      <time datetime="Thu Dec 13 2018 01:00:00 GMT+0100 (CET)">Dec 13th 2018</time> 
+    </span>
+  </h2>
+    <div class='tags'>
+      By: <span><a href='../../about/david'>David</a></span>
+    </div>
+    <div class="tags">
+      Tags:
+      
+        <span><a href='../../tags/redux/'>redux</a></span>
+      
+        <span><a href='../../tags/typescript/'>typescript</a></span>
+      
+    </div>
+</header>
+
+  <section class='post-content'>
+  <h3 id="premise">Premise</h3>
+<p>Redux is frequently bemoaned for forcing you to write a fair bit of boilerplate. Sometimes that critisism is not fair as the code in question is actually necessary, but definitely Redux app can often feel very verbose.</p>
+<p>In this post we&#39;ll explore a patten to make Redux apps feel more lean, with the added bonus that related logic will be less scattered!</p>
+<p>Our exploration be a walkthrough a TypeScript-driven example, where we&#39;ll first write &quot;traditional&quot; Redux code, and then refactor it to the pattern in question.</p>
+<p>For brevity&#39;s sake I&#39;ll be cutting some corners, so neither logic nor modelling will be optimal with regards to perfomance and convenience.</p>
+<h3 id="the-data-model">The data model</h3>
+<p>Imagine that we have an app with <em>users</em> and <em>posts</em>:</p>
+<pre><code><span class="class"><span class="keyword">type</span> <span class="title">User</span> =</span> {
+  name: <span class="built_in">string</span>;
+  postIds: <span class="built_in">string</span>[];
+};
+
+<span class="class"><span class="keyword">type</span> <span class="title">Post</span> =</span> {
+  title: <span class="built_in">string</span>;
+  content: <span class="built_in">string</span>;
+  authorId: <span class="built_in">string</span>;
+};</code></pre>
+
+<p>They each live in a top-level prop in our <em>app state</em>:</p>
+<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">UserState</span> = <span class="container">{ [<span class="type">ID</span>: <span class="title">string</span>]: <span class="type">User</span> }</span>;</span>
+<span class="typedef"><span class="keyword">type</span> <span class="type">PostState</span> = <span class="container">{ [<span class="type">ID</span>: <span class="title">string</span>]: <span class="type">Post</span> }</span>;</span>
+
+<span class="typedef"><span class="keyword">type</span> <span class="type">AppState</span> = <span class="container">{
+  <span class="title">users</span>: <span class="type">UserState</span>;
+  <span class="title">posts</span>: <span class="type">PostState</span>;
+  // ...<span class="title">probably</span> <span class="title">more</span> <span class="title">stuff</span> <span class="title">here</span> <span class="title">too</span>
+}</span>;</span></code></pre>
+
+<h3 id="creating-actions">Creating actions</h3>
+<p>We&#39;ll be using the popular action format where all additional data are collected in a <code>payload</code> prop:</p>
+<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">ActionBlueprint</span>&lt;<span class="type">T</span>, <span class="type">P</span>&gt; = <span class="container">{
+  <span class="title">type</span>: <span class="type">T</span>;
+  <span class="title">payload</span>: <span class="type">P</span>;
+}</span>;</span></code></pre>
+
+<p>For our experiment, let&#39;s make up two actions - we want to <em>delete posts</em> and <em>add posts</em>!</p>
+<pre><code><span class="class"><span class="keyword">type</span> <span class="title">NewPostPayload</span> =</span> {
+  title: <span class="built_in">string</span>;
+  content: <span class="built_in">string</span>;
+  authorId: <span class="built_in">string</span>;
+  postId: <span class="built_in">string</span>;
+};
+
+<span class="class"><span class="keyword">type</span> <span class="title">NewPostAction</span> =</span> ActionBlueprint&lt;<span class="string">"NEW_POST"</span>, NewPostPayload&gt;;
+
+<span class="class"><span class="keyword">type</span> <span class="title">DeletePostPayload</span> =</span> {
+  postId: <span class="built_in">string</span>;
+};
+
+<span class="class"><span class="keyword">type</span> <span class="title">DeletePostAction</span> =</span> ActionBlueprint&lt;<span class="string">"DELETE_POST"</span>, DeletePostPayload&gt;;</code></pre>
+
+<p>We&#39;ll also make an <code>AppAction</code> type that&#39;s simply the union of all existing actions in our app:</p>
+<pre><code>type AppAction = NewPostAction | DeletePostAction; // <span class="keyword">...</span></code></pre>
+
+<p>Creating a <em>new post action</em> could be done something like this:</p>
+<pre><code><span class="keyword">const</span> NewPostActionCreator = (
+  title: <span class="typename">string</span>,
+  content: <span class="typename">string</span>,
+  authorId: <span class="typename">string</span>,
+  postId: <span class="typename">string</span>
+): NewPostAction =&gt; ({
+  <span class="keyword">type</span>: <span class="string">"NEW_POST"</span>,
+  payload: {
+    title,
+    content,
+    authorId,
+    postId
+  }
+});</code></pre>
+
+<p>And here&#39;s how we create <em>delete post actions</em>:</p>
+<pre><code><span class="keyword">const</span> DeletePostActionCreator = (postId: PostId): DeletePostAction =&gt; ({
+  type: <span class="string">"DELETE_POST"</span>,
+  payload: { postId }
+});</code></pre>
+
+<h3 id="reducer-take-one">Reducer, take one</h3>
+<p>In a traditional Redux app we&#39;d create a subreducer for <code>appState.posts</code>:</p>
+<pre><code>const postReducer = (postState: PostState, action: AppAction): PostState =&gt; {
+  switch (action<span class="preprocessor">.type</span>) {
+    case <span class="string">"NEW_POST"</span>:
+      return {
+        ..<span class="preprocessor">.postState</span>,
+        [action<span class="preprocessor">.payload</span><span class="preprocessor">.postId</span>]: {
+          title: action<span class="preprocessor">.payload</span><span class="preprocessor">.title</span>,
+          content: action<span class="preprocessor">.payload</span><span class="preprocessor">.content</span>,
+          authorId: action<span class="preprocessor">.payload</span><span class="preprocessor">.authorId</span>
+        }
+      }<span class="comment">;</span>
+    case <span class="string">"DELETE_POST"</span>: {
+      const { [action<span class="preprocessor">.payload</span><span class="preprocessor">.postId</span>]: DELETE_ME, ..<span class="preprocessor">.keepUs</span> } = postState<span class="comment">;</span>
+      return keepUs<span class="comment">;</span>
+    }
+    default:
+      return postState<span class="comment">;</span>
+  }
+}<span class="comment">;</span></code></pre>
+
+<p>The subreducer for <code>appState.users</code> also has to deal with both actions, in order to keep the user postlists up to date:</p>
+<pre><code>const userReducer = (userState: UserState, action: AppAction): UserState =&gt; {
+  switch (action<span class="preprocessor">.type</span>) {
+    case <span class="string">"NEW_POST"</span>: {
+      const author = userState[action<span class="preprocessor">.payload</span><span class="preprocessor">.authorId</span>]<span class="comment">;</span>
+      return {
+        ..<span class="preprocessor">.userState</span>,
+        [author<span class="preprocessor">.userId</span>]: {
+          ..<span class="preprocessor">.author</span>,
+          postIds: author<span class="preprocessor">.postIds</span><span class="preprocessor">.concat</span>(action<span class="preprocessor">.payload</span><span class="preprocessor">.postId</span>)
+        }
+      }<span class="comment">;</span>
+    }
+    case <span class="string">"DELETE_POST"</span>:
+      return Object<span class="preprocessor">.keys</span>(userState)<span class="preprocessor">.reduce</span>(
+        (mem, userId) =&gt; {
+          const user = userState[userId]<span class="comment">;</span>
+          return {
+            ..<span class="preprocessor">.mem</span>,
+            [userId]: {
+              ..<span class="preprocessor">.user</span>,
+              postIds: user<span class="preprocessor">.postIds</span><span class="preprocessor">.filter</span>(pid =&gt; pid !== action<span class="preprocessor">.payload</span><span class="preprocessor">.postId</span>)
+            }
+          }<span class="comment">;</span>
+        },
+        {} as UserState
+      )<span class="comment">;</span>
+    default:
+      return userState<span class="comment">;</span>
+  }
+}<span class="comment">;</span></code></pre>
+
+<p>The reducer for our entire app state is merely just putting the subreducers together:</p>
+<pre><code>type <span class="function"><span class="title">Reducer</span> = <span class="params">(state: AppState, action: AppAction)</span> =&gt;</span> AppState;
+
+<span class="reserved">const</span> <span class="attribute">reducer</span>: <span class="function"><span class="title">Reducer</span> = <span class="params">(state, action)</span> =&gt;</span> ({
+  <span class="attribute">users</span>: userReducer(currentState.users, action),
+  <span class="attribute">posts</span>: postReducer(currentState.posts, action)
+});</code></pre>
+
+<p>Normally you&#39;d use <code>Redux.combineReducers</code>, but that amounts to the same thing.</p>
+<h3 id="halftime-break">Halftime break</h3>
+<p>So far the traditional approach. What&#39;s wrong with it?</p>
+<p>Well, some would say we&#39;ve written a fair bit of boilerplate. I&#39;m not sure I fully agree, but definitely it feels verbose.</p>
+<p>A worse thing is the shattering of related logic. If you&#39;re new to the codebase and want to read up on how post deletion works, you have to look in three places:</p>
+<ul>
+<li>the delete action creator</li>
+<li>the user reducer</li>
+<li>the post reducer</li>
+</ul>
+<p>And in reality it is worse - you have to look in the action creator and in ALL subreducers, because you don&#39;t really know which ones might have interest in the action!</p>
+<h3 id="actions-2-0">Actions 2.0</h3>
+<p>The pattern we&#39;re exploring in this post has a very simple solution to this problem - we <em>move all related reducing into the action objects</em>!</p>
+<p>An action, apart from the payload, may therefore also include reducers for whatever state domain it wants to affect! Thus we extend our action type accordingly:</p>
+<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">ActionBlueprint</span>&lt;<span class="type">T</span>, <span class="type">P</span>&gt; = <span class="container">{
+  <span class="title">type</span>: <span class="type">T</span>;
+  <span class="title">payload</span>: <span class="type">P</span>;
+  <span class="title">reduceUsers</span>?(<span class="title">userState</span>: <span class="type">UserState</span>, <span class="title">payload</span>: <span class="type">P</span>): <span class="type">UserState</span>;
+  <span class="title">reducePosts</span>?(<span class="title">postState</span>: <span class="type">PostState</span>, <span class="title">payload</span>: <span class="type">P</span>): <span class="type">PostState</span>;
+}</span>;</span></code></pre>
+
+<p>Here&#39;s what the <code>DeletePostActionCreator</code> could look like in this modern take:</p>
+<pre><code><span class="reserved">const</span> DeletePostActionCreator = (<span class="attribute">postId</span>: string): DeletePostAction<span class="function"> =&gt;</span> ({
+  <span class="attribute">type</span>: <span class="string">"DELETE_POST"</span>,
+  <span class="attribute">payload</span>: { postId },
+  reducePosts(postState, payload) {
+    <span class="reserved">const</span> { [payload.postId]: DELETE_ME, ...keepUs } = postState;
+    <span class="keyword">return</span> keepUs;
+  },
+  reduceUsers(userState, payload) {
+    <span class="keyword">return</span> Object.keys(userState).reduce(
+      <span class="function"><span class="params">(mem, userId)</span> =&gt;</span> {
+        <span class="reserved">const</span> user = userState[userId];
+        <span class="keyword">return</span> {
+          ...mem,
+          [userId]: {
+            ...user,
+            <span class="attribute">postIds</span>: user.postIds.filter(pid<span class="function"> =&gt;</span> pid !== payload.postId)
+          }
+        };
+      },
+      {} as UserState
+    );
+  }
+});</code></pre>
+
+<p>The logic inside the minireducers is what used to live inside individual <code>case</code>:s in the old subreducers.</p>
+<p>And the <code>NewPostActionCreator</code> for completion&#39;s sake:</p>
+<pre><code>const NewPostActionCreator = (
+  title: string,
+  content: string,
+  authorId: string,
+  postId: string
+): NewPostAction =&gt; ({
+  type: <span class="string">"NEW_POST"</span>,
+  payload: {
+    title,
+    content,
+    authorId,
+    postId
+  },
+  reducePosts(postState, payload) {
+    return {
+      ..<span class="preprocessor">.postState</span>,
+      [payload<span class="preprocessor">.postId</span>]: {
+        title: payload<span class="preprocessor">.title</span>,
+        content: payload<span class="preprocessor">.content</span>,
+        authorId: payload<span class="preprocessor">.authorId</span>
+      }
+    }<span class="comment">;</span>
+  },
+  reduceUsers(userState, payload) {
+    const author = userState[payload<span class="preprocessor">.authorId</span>]<span class="comment">;</span>
+    return {
+      ..<span class="preprocessor">.userState</span>,
+      [author<span class="preprocessor">.userId</span>]: {
+        ..<span class="preprocessor">.author</span>,
+        postIds: author<span class="preprocessor">.postIds</span><span class="preprocessor">.concat</span>(payload<span class="preprocessor">.postId</span>)
+      }
+    }<span class="comment">;</span>
+  }
+})<span class="comment">;</span></code></pre>
+
+<p>Note that we don&#39;t pass in the full action object to the reducers. Why would we? We are inside a specific creator, so we know what type it is!</p>
+<h3 id="reducer-2-0">Reducer 2.0</h3>
+<p>What about the reducers in this brave new world? Well, first off there are no subreducers anymore. The various cases from their switches instead lives in the individual action creators, as you just saw.</p>
+<p>The main reducer is simply a matter of applying whatever reducers the action in question happen to have:</p>
+<pre><code>type Reducer = (
+  state: AppState,
+  action: ActionBlueprint&lt;string, any&gt;
+) =&gt; AppState<span class="comment">;</span>
+
+const reducer: Reducer = (state, action) =&gt; ({
+  users: action<span class="preprocessor">.reduceUsers</span>
+    ? action<span class="preprocessor">.reduceUsers</span>(state<span class="preprocessor">.users</span>, action<span class="preprocessor">.payload</span>)
+    : state<span class="preprocessor">.users</span>,
+  posts: action<span class="preprocessor">.reducePosts</span>
+    ? action<span class="preprocessor">.reducePosts</span>(state<span class="preprocessor">.posts</span>, action<span class="preprocessor">.payload</span>)
+    : state<span class="preprocessor">.posts</span>
+})<span class="comment">;</span></code></pre>
+
+<h3 id="taking-score">Taking score</h3>
+<p>So, did we reduce the amount of boilerplate? I think so! The string matching with <code>action.type</code> is completely gone, and the Redux-typical switches are nowhere to be seen.</p>
+<p>But the big win in my mind is the colocation of related logic. Each action creator file will contain the full truth about how that particular action affects the state.</p>
+<p>A third, less obvious win is that we get a clearer separation between actions and thunks. Normally it is very common for the former to be created inline in the latter, but now that the actions carry the reducers it is more obvious that they are their own thing.</p>
+<h3 id="wrapping-up">Wrapping up</h3>
+<p>The only downside I can see with the pattern we just explored is that it might surprise developers used to the traditional approach. Other than that it is all wins in my book! What do you think?</p>
+
+  </section>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+    var disqus_shortname = 'krawaller'; // required: replace example with your forum shortname
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+</article>    
+
+
+
+
+  </main><!-- END role="main" -->
+</div><!-- END .container -->
+
+</body>
+</html>
