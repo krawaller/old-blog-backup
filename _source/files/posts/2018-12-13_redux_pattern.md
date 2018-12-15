@@ -2,18 +2,20 @@
 type: post
 title: "How to reduce boilerplate in Redux"
 date: 2018-12-13
-tags: [redux, typescript]
+tags: [redux, typescript, cyclejs]
 author: David
 excerpt: Exploring a pattern that lets us group related logic and reduce boilerplate in Redux apps
 ---
 
 ### Premise
 
-Redux is frequently bemoaned for forcing you to write a fair bit of boilerplate. Sometimes that critisism is not fair as the code in question is actually necessary, but definitely Redux app can often feel very verbose.
+[Redux](https://redux.js.org/) is frequently bemoaned for forcing you to write a fair bit of boilerplate. Sometimes that critisism is not fair as the code in question is actually necessary, but definitely Redux app can often feel very verbose.
 
-In this post we'll explore a patten to make Redux apps feel more lean, with the added bonus that related logic will be less scattered!
+In October I attended [CycleConf](http://cycleconf.com/), the yearly conference for the [CycleJS](https://cycle.js.org/) framework. There I got to play with [Cycle State](https://cycle.js.org/api/state.html), a new API where each component gets the current state as an input stream, and returns a stream of reducers to calculate the next state.
 
-Our exploration be a walkthrough a TypeScript-driven example, where we'll first write "traditional" Redux code, and then refactor it to the pattern in question.
+CycleJS is of course very (very) different from a Redux-driven app, but I realised that the same pattern can be applied to Redux nonetheless! And doing so means less boilerplate and better grouping of related logic.
+
+In this post we'll explore a TypeScript-driven example, where we'll first write "traditional" Redux code, and then refactor it to the pattern in question.
 
 For brevity's sake I'll be cutting some corners, so neither logic nor modelling will be optimal with regards to perfomance and convenience.
 
@@ -185,7 +187,7 @@ const reducer: Reducer = (state, action) => ({
 
 Normally you'd use `Redux.combineReducers`, but that amounts to the same thing.
 
-### Halftime break
+### Intermission
 
 So far the traditional approach. What's wrong with it?
 
@@ -315,6 +317,114 @@ But the big win in my mind is the colocation of related logic. Each action creat
 
 A third, less obvious win is that we get a clearer separation between actions and thunks. Normally it is very common for the former to be created inline in the latter, but now that the actions carry the reducers it is more obvious that they are their own thing.
 
+### Actions 3.0
+
+But, waitaminue - why are we splitting up the reducing by state domain? Why don't we just do everything in a single reducer for the full state in one fell swoop?
+
+```typescript
+type ActionBlueprint<T, P> = {
+  type: T;
+  payload: P;
+  reducer: (state: AppState, payload: P) => AppState;
+};
+```
+
+The `NewPostActionCreator` can then be streamlined to this...
+
+```typescript
+const NewPostActionCreator = (
+  title: string,
+  content: string,
+  authorId: UserId,
+  postId: PostId
+): NewPostAction => ({
+  type: "NEW_POST",
+  payload: {
+    postId,
+    title,
+    content,
+    authorId
+  },
+  reducer(state, payload) {
+    const author = state.users[payload.authorId];
+    return {
+      ...state,
+      posts: {
+        ...state.posts,
+        [payload.postId]: {
+          title: payload.title,
+          content: payload.content,
+          authorId: payload.authorId
+        }
+      },
+      users: {
+        ...state.users,
+        [author.userId]: {
+          ...author,
+          posts: author.posts.concat(payload.postId)
+        }
+      }
+    };
+  }
+});
+```
+
+...and `DeletePostActionCreator` becomes very short and sweet:
+
+```typescript
+const DeletePostActionCreator3 = (postId: PostId): DeletePostAction => ({
+  type: "DELETE_POST",
+  payload: { postId },
+  reducer(state, payload) {
+    const { [payload.postId]: postToDelete, ...postsToKeep } = state.posts;
+    const author = state.users[postToDelete.authorId];
+    return {
+      ...state,
+      posts: postsToKeep,
+      users: {
+        ...state.users,
+        [postToDelete.authorId]: {
+          ...author,
+          posts: author.posts.filter(pid => pid !== payload.postId)
+        }
+      }
+    };
+  }
+});
+```
+
+Another cute advantage is that we can now make our action type work for any app by adding the app state type to the generic parameters:
+
+```typescript
+type ActionBlueprint<T, P, S> = {
+  type: T;
+  payload: P;
+  reducer: (state: S, payload: P) => S;
+};
+
+type NewPostAction = ActionBlueprint<"NEW_POST", NewPostPayload, AppState>;
+type DeletePostAction = ActionBlueprint<
+  "DELETE_POST",
+  DeletePostPayload,
+  AppState
+>;
+```
+
+### Reducer 3.0
+
+Now that each action just has one reducer, the "real" reducer becomes even simpler to define:
+
+```typescript
+const reducer: Reducer = (state, action) =>
+  action.reducer ? action.reducer(state, action.payload) : state;
+```
+
+We still need to check that a reducer exists on the action, since Redux fires its own actions that won't have a built-in reducer.
+
 ### Wrapping up
 
-The only downside I can see with the pattern we just explored is that it might surprise developers used to the traditional approach. Other than that it is all wins in my book! What do you think?
+I really like how putting the reducing logic inside the action groups all related code together in one place. And you'll find that employing this pattern means less cruft and boilerplate.
+
+The only downside I can see with the pattern we just explored is that it might surprise developers used to the traditional approach. Other than that it is all wins in my book!
+
+What do _you_ think?

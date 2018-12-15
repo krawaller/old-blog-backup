@@ -75,14 +75,17 @@ Exploring a pattern that lets us group related logic and reduce boilerplate in R
       
         <span><a href='../../tags/typescript/'>typescript</a></span>
       
+        <span><a href='../../tags/cyclejs/'>cyclejs</a></span>
+      
     </div>
 </header>
 
   <section class='post-content'>
   <h3 id="premise">Premise</h3>
-<p>Redux is frequently bemoaned for forcing you to write a fair bit of boilerplate. Sometimes that critisism is not fair as the code in question is actually necessary, but definitely Redux app can often feel very verbose.</p>
-<p>In this post we&#39;ll explore a patten to make Redux apps feel more lean, with the added bonus that related logic will be less scattered!</p>
-<p>Our exploration be a walkthrough a TypeScript-driven example, where we&#39;ll first write &quot;traditional&quot; Redux code, and then refactor it to the pattern in question.</p>
+<p><a href="https://redux.js.org/">Redux</a> is frequently bemoaned for forcing you to write a fair bit of boilerplate. Sometimes that critisism is not fair as the code in question is actually necessary, but definitely Redux app can often feel very verbose.</p>
+<p>In October I attended <a href="http://cycleconf.com/">CycleConf</a>, the yearly conference for the <a href="https://cycle.js.org/">CycleJS</a> framework. There I got to play with <a href="https://cycle.js.org/api/state.html">Cycle State</a>, a new API where each component gets the current state as an input stream, and returns a stream of reducers to calculate the next state.</p>
+<p>CycleJS is of course very (very) different from a Redux-driven app, but I realised that the same pattern can be applied to Redux nonetheless! And doing so means less boilerplate and better grouping of related logic.</p>
+<p>In this post we&#39;ll explore a TypeScript-driven example, where we&#39;ll first write &quot;traditional&quot; Redux code, and then refactor it to the pattern in question.</p>
 <p>For brevity&#39;s sake I&#39;ll be cutting some corners, so neither logic nor modelling will be optimal with regards to perfomance and convenience.</p>
 <h3 id="the-data-model">The data model</h3>
 <p>Imagine that we have an app with <em>users</em> and <em>posts</em>:</p>
@@ -218,7 +221,7 @@ Exploring a pattern that lets us group related logic and reduce boilerplate in R
 });</code></pre>
 
 <p>Normally you&#39;d use <code>Redux.combineReducers</code>, but that amounts to the same thing.</p>
-<h3 id="halftime-break">Halftime break</h3>
+<h3 id="intermission">Intermission</h3>
 <p>So far the traditional approach. What&#39;s wrong with it?</p>
 <p>Well, some would say we&#39;ve written a fair bit of boilerplate. I&#39;m not sure I fully agree, but definitely it feels verbose.</p>
 <p>A worse thing is the shattering of related logic. If you&#39;re new to the codebase and want to read up on how post deletion works, you have to look in three places:</p>
@@ -322,8 +325,96 @@ const reducer: Reducer = (state, action) =&gt; ({
 <p>So, did we reduce the amount of boilerplate? I think so! The string matching with <code>action.type</code> is completely gone, and the Redux-typical switches are nowhere to be seen.</p>
 <p>But the big win in my mind is the colocation of related logic. Each action creator file will contain the full truth about how that particular action affects the state.</p>
 <p>A third, less obvious win is that we get a clearer separation between actions and thunks. Normally it is very common for the former to be created inline in the latter, but now that the actions carry the reducers it is more obvious that they are their own thing.</p>
+<h3 id="actions-3-0">Actions 3.0</h3>
+<p>But, waitaminue - why are we splitting up the reducing by state domain? Why don&#39;t we just do everything in a single reducer for the full state in one fell swoop?</p>
+<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">ActionBlueprint</span>&lt;<span class="type">T</span>, <span class="type">P</span>&gt; = <span class="container">{
+  <span class="title">type</span>: <span class="type">T</span>;
+  <span class="title">payload</span>: <span class="type">P</span>;
+  <span class="title">reducer</span>: (<span class="title">state</span>: <span class="type">AppState</span>, <span class="title">payload</span>: <span class="type">P</span>) =&gt; <span class="type">AppState</span>;
+}</span>;</span></code></pre>
+
+<p>The <code>NewPostActionCreator</code> can then be streamlined to this...</p>
+<pre><code>const NewPostActionCreator = (
+  title: string,
+  content: string,
+  authorId: UserId,
+  postId: PostId
+): NewPostAction =&gt; ({
+  type: <span class="string">"NEW_POST"</span>,
+  payload: {
+    postId,
+    title,
+    content,
+    authorId
+  },
+  reducer(state, payload) {
+    const author = state<span class="preprocessor">.users</span>[payload<span class="preprocessor">.authorId</span>]<span class="comment">;</span>
+    return {
+      ..<span class="preprocessor">.state</span>,
+      posts: {
+        ..<span class="preprocessor">.state</span><span class="preprocessor">.posts</span>,
+        [payload<span class="preprocessor">.postId</span>]: {
+          title: payload<span class="preprocessor">.title</span>,
+          content: payload<span class="preprocessor">.content</span>,
+          authorId: payload<span class="preprocessor">.authorId</span>
+        }
+      },
+      users: {
+        ..<span class="preprocessor">.state</span><span class="preprocessor">.users</span>,
+        [author<span class="preprocessor">.userId</span>]: {
+          ..<span class="preprocessor">.author</span>,
+          posts: author<span class="preprocessor">.posts</span><span class="preprocessor">.concat</span>(payload<span class="preprocessor">.postId</span>)
+        }
+      }
+    }<span class="comment">;</span>
+  }
+})<span class="comment">;</span></code></pre>
+
+<p>...and <code>DeletePostActionCreator</code> becomes very short and sweet:</p>
+<pre><code>const DeletePostActionCreator3 = (postId: PostId): DeletePostAction =&gt; ({
+  type: <span class="string">"DELETE_POST"</span>,
+  payload: { postId },
+  reducer(state, payload) {
+    const { [payload<span class="preprocessor">.postId</span>]: postToDelete, ..<span class="preprocessor">.postsToKeep</span> } = state<span class="preprocessor">.posts</span><span class="comment">;</span>
+    const author = state<span class="preprocessor">.users</span>[postToDelete<span class="preprocessor">.authorId</span>]<span class="comment">;</span>
+    return {
+      ..<span class="preprocessor">.state</span>,
+      posts: postsToKeep,
+      users: {
+        ..<span class="preprocessor">.state</span><span class="preprocessor">.users</span>,
+        [postToDelete<span class="preprocessor">.authorId</span>]: {
+          ..<span class="preprocessor">.author</span>,
+          posts: author<span class="preprocessor">.posts</span><span class="preprocessor">.filter</span>(pid =&gt; pid !== payload<span class="preprocessor">.postId</span>)
+        }
+      }
+    }<span class="comment">;</span>
+  }
+})<span class="comment">;</span></code></pre>
+
+<p>Another cute advantage is that we can now make our action type work for any app by adding the app state type to the generic parameters:</p>
+<pre><code><span class="typedef"><span class="keyword">type</span> <span class="type">ActionBlueprint</span>&lt;<span class="type">T</span>, <span class="type">P</span>, <span class="type">S</span>&gt; = <span class="container">{
+  <span class="title">type</span>: <span class="type">T</span>;
+  <span class="title">payload</span>: <span class="type">P</span>;
+  <span class="title">reducer</span>: (<span class="title">state</span>: <span class="type">S</span>, <span class="title">payload</span>: <span class="type">P</span>) =&gt; <span class="type">S</span>;
+}</span>;</span>
+
+<span class="typedef"><span class="keyword">type</span> <span class="type">NewPostAction</span> = <span class="type">ActionBlueprint</span>&lt;"<span class="type">NEW_POST</span>", <span class="type">NewPostPayload</span>, <span class="type">AppState</span>&gt;;</span>
+<span class="typedef"><span class="keyword">type</span> <span class="type">DeletePostAction</span> = <span class="type">ActionBlueprint</span>&lt;</span>
+  <span class="string">"DELETE_POST"</span>,
+  <span class="type">DeletePostPayload</span>,
+  <span class="type">AppState</span>
+&gt;;</code></pre>
+
+<h3 id="reducer-3-0">Reducer 3.0</h3>
+<p>Now that each action just has one reducer, the &quot;real&quot; reducer becomes even simpler to define:</p>
+<pre><code><span class="reserved">const</span> <span class="attribute">reducer</span>: <span class="function"><span class="title">Reducer</span> = <span class="params">(state, action)</span> =&gt;</span>
+  action.reducer ? action.reducer(state, action.payload) : state;</code></pre>
+
+<p>We still need to check that a reducer exists on the action, since Redux fires its own actions that won&#39;t have a built-in reducer.</p>
 <h3 id="wrapping-up">Wrapping up</h3>
-<p>The only downside I can see with the pattern we just explored is that it might surprise developers used to the traditional approach. Other than that it is all wins in my book! What do you think?</p>
+<p>I really like how putting the reducing logic inside the action groups all related code together in one place. And you&#39;ll find that employing this pattern means less cruft and boilerplate.</p>
+<p>The only downside I can see with the pattern we just explored is that it might surprise developers used to the traditional approach. Other than that it is all wins in my book!</p>
+<p>What do <em>you</em> think?</p>
 
   </section>
 
